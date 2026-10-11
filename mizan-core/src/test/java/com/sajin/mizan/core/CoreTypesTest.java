@@ -29,11 +29,27 @@ class CoreTypesTest {
   }
 
   @Test
-  void enumOrdinalsAreFrozenWireValues() {
-    assertThat(Side.values()).containsExactly(Side.BUY, Side.SELL);
-    assertThat(OrderType.values()).containsExactly(OrderType.LIMIT, OrderType.MARKET);
-    assertThat(TimeInForce.values())
-        .containsExactly(TimeInForce.GTC, TimeInForce.IOC, TimeInForce.FOK, TimeInForce.POST_ONLY);
+  void enumWireCodesAreFrozenAndRoundTrip() {
+    assertThat(Side.BUY.code()).isZero();
+    assertThat(Side.SELL.code()).isEqualTo(1);
+    assertThat(OrderType.LIMIT.code()).isZero();
+    assertThat(OrderType.MARKET.code()).isEqualTo(1);
+    assertThat(TimeInForce.GTC.code()).isZero();
+    assertThat(TimeInForce.IOC.code()).isEqualTo(1);
+    assertThat(TimeInForce.FOK.code()).isEqualTo(2);
+    assertThat(TimeInForce.POST_ONLY.code()).isEqualTo(3);
+    for (Side s : Side.values()) {
+      assertThat(Side.fromCode(s.code())).isEqualTo(s);
+    }
+    for (OrderType t : OrderType.values()) {
+      assertThat(OrderType.fromCode(t.code())).isEqualTo(t);
+    }
+    for (TimeInForce t : TimeInForce.values()) {
+      assertThat(TimeInForce.fromCode(t.code())).isEqualTo(t);
+    }
+    assertThat(Side.fromCode(2)).isNull();
+    assertThat(OrderType.fromCode(-1)).isNull();
+    assertThat(TimeInForce.fromCode(4)).isNull();
     assertThat(Side.BUY.opposite()).isEqualTo(Side.SELL);
     assertThat(Side.SELL.opposite()).isEqualTo(Side.BUY);
   }

@@ -64,6 +64,7 @@ subprojects {
     tasks.withType<Test>().configureEach {
         maxHeapSize = "1g"
         systemProperty("jqwik.database", layout.buildDirectory.file("jqwik-database").get().asFile.path)
+        systemProperty("mizan.gradleTask", path) // for seed replay hints
         systemProperty("mizan.iter", iter.get())
         systemProperty("mizan.seeds", seeds.get())
         if (seed.isPresent) systemProperty("mizan.seed", seed.get())
