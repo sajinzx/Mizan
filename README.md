@@ -2,7 +2,7 @@
 
 A deterministic limit-order-book engine with an escrowed multi-asset ledger. Commands are Ed25519-signed, and fills become final only once committed to an fsynced block log. A Tendermint-lite BFT layer is planned for the extended tier. **Educational project: simulated assets only.**
 
-> Status: **M1 (foundations).** Nothing here has been benchmarked yet. Performance numbers will appear only with linked raw output in `docs/bench/`.
+> Status: **M2 (deterministic engine) complete; M3 next.** Nothing here has been benchmarked yet. Performance numbers will appear only with linked raw output in `docs/bench/`.
 
 ## Quick start
 
@@ -30,6 +30,8 @@ Randomized tests print `SEED=<n>` and a replay command on failure. Re-run with `
   - [0005 Toolchain versions](docs/adr/0005-toolchain-versions.md)
   - [0006 Test-scope testkit edges](docs/adr/0006-test-scope-testkit-edges.md)
   - [0007 Core type placement](docs/adr/0007-core-type-placement.md)
+  - [0008 Engine semantics clarifications](docs/adr/0008-engine-semantics-clarifications.md)
+  - [0009 Test signer and architecture scans](docs/adr/0009-test-signing-and-arch-scans.md)
 
 ## Modules
 
