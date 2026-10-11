@@ -1,5 +1,5 @@
 # Progress
-Current milestone: M3   Last gate passed: M2 (M1 gate passed except the planted-red CI check)
+Current milestone: M4   Last gate passed: M3 (M1 gate passed except the planted-red CI check)
 Decisions/ADRs: see docs/adr/ (0001–0003 design; 0004 naming, 0005 toolchain versions, 0006 test-scope testkit edges, 0007 core type placement, 0008 engine semantics, 0009 test signer + arch scans)
 
 ## M1
@@ -46,7 +46,9 @@ Note: M2 landed as one commit ("Milestone 2 completed") rather than one commit p
 - [x] M3-T2 AuditTap (`sim`): Agrona SPSC queue that drops and counts when full → daemon `audit-logger` thread → `PipedOutputStream` → `audit-reader` thread → sink. `AuditTapTest.stalledReaderNeverBlocksEngine` (defect 5): 200k `onTrade` calls finish within 2 s with the reader stalled; it fails (times out) when the pipe write is moved back onto the caller thread.
 - [x] M3-T3 Mempool (`sim`): bounded FIFO with `ReentrantLock` + `Condition`, de-duplicated by key while present (`forCommands` keys on `(account, nonce)`), `add` → ADDED/DUPLICATE/FULL, `drain(max, timeoutMs)`. Tests: capacity, duplicates, timeout, wake-up on add, 4 producers × 20k items with a concurrent drainer (none lost, none duplicated).
 - [x] M3-T4 JMH harness (`bench`, src/jmh): `ExecuteBench` (throughput + SampleTime; signatures off / Ed25519; deterministic 32,768-command pre-signed workload, all commands accepted, replayed from a copy of the initial state), `BookBench` (addCancel, matchOne; depth 10/100/1000, 4 orders per level). `-Pjmh.quick` runs a 1-fork smoke test; `-Pjmh.includes=<regex>` selects benchmarks.
-- [ ] M3-T5 Publish baseline
+- [x] M3-T5 Publish baseline: [`docs/bench/baseline.md`](docs/bench/baseline.md) + raw JMH JSON/log. Ryzen 7 4700U laptop, JDK 21.0.12.1, defaults. execute: 3.40 M/s with signatures off (p50 0.4 µs, p99 1.1 µs, p99.9 26 µs); 1,027/s with Ed25519 (p50 0.8 ms). Book addCancel 17.2 → 7.9 M/s from depth 10 to 1000. No optimization done.
+
+**Gate M3 (2026-10-12): passed.** No lost or duplicated commands under 8 producers × 3,000; BUSY on a full queue (unit + flood test); baseline published with methodology and raw output.
 
 ## M4
 - [ ] M4-T1 FrameCodec
