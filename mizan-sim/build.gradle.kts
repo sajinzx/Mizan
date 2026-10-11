@@ -5,4 +5,5 @@ dependencies {
     implementation(project(":mizan-chain"))
     implementation(project(":mizan-net"))
     implementation(project(":mizan-testkit"))
+    implementation(libs.agrona)
 }

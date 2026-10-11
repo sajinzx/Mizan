@@ -43,7 +43,7 @@ Note: M2 landed as one commit ("Milestone 2 completed") rather than one commit p
 
 ## M3
 - [x] M3-T1 Sequencer: Agrona MPSC inbound + control queues, `BackoffIdleStrategy`, `doWork()` with an injected clock, cut on `maxBatch` or interval, `pending ≤ maxBatch` backpressure and replay queue (ADR 0010). Tests: 8 producers × 3,000 commands, none lost or duplicated, per-producer FIFO, drafts == authenticated commands in execution order, last draft root == replay; BUSY on full queue; draft roots equal a validator replay; rollback revokes from the oldest uncommitted trade and replays. `SequencerTest.authFailedCommandNeverEntersBlock` (defect 1) fails when the fix is removed.
-- [ ] M3-T2 AuditTap
+- [x] M3-T2 AuditTap (`sim`): Agrona SPSC queue that drops and counts when full → daemon `audit-logger` thread → `PipedOutputStream` → `audit-reader` thread → sink. `AuditTapTest.stalledReaderNeverBlocksEngine` (defect 5): 200k `onTrade` calls finish within 2 s with the reader stalled; it fails (times out) when the pipe write is moved back onto the caller thread.
 - [ ] M3-T3 Mempool
 - [ ] M3-T4 JMH harness
 - [ ] M3-T5 Publish baseline
