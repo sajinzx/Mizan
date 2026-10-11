@@ -1,6 +1,6 @@
 # Progress
 Current milestone: M1   Last gate passed: none
-Decisions/ADRs: see docs/adr/ (0004 naming, 0005 toolchain versions, 0006 test-scope testkit edges)
+Decisions/ADRs: see docs/adr/ (0001–0003 design; 0004 naming, 0005 toolchain versions, 0006 test-scope testkit edges, 0007 core type placement)
 
 ## M1
 - [x] M1-T1 Scaffold — Gradle 9.8.0 wrapper (sha256-pinned), 11 modules, Java 21 toolchain via foojay, Spotless (gjf 1.36.1), Error Prone 2.50.0, `-Xlint:all -Werror` everywhere (stricter than "in CI"), JaCoCo, tasks `nightly`/`recoveryTest`/`simSweep`, `checkModuleGraph` hooked into `check`. Verified: planted `core -> engine` edge fails `checkModuleGraph` ("forbidden edge core -> engine (implementation)"). Deferred: JavaFX plugin is not applied to `mizan-ui` until M5-T4 (catalog entry exists). Known: one Gradle-11 deprecation (`Configuration.setVisible`) comes from a third-party plugin, not our scripts.
@@ -9,7 +9,7 @@ Decisions/ADRs: see docs/adr/ (0004 naming, 0005 toolchain versions, 0006 test-s
 - [x] M1-T4 CommandCodec — §5.3 encode/decode; decode throws only `ProtocolException` (explicit checks, no catch-all). Fuzz: 200k random arrays + 100k bit-flip mutations of valid envelopes, each one either decodes and re-encodes byte-identically or throws `ProtocolException`; truncation/extension rejected at every length. Error Prone `EnumOrdinal` led to explicit frozen `code()` on `Side`/`OrderType`/`TimeInForce` (same values as the §5.3 ordinals). Added testkit `Seed`/`SeedExtension`: `-Pseed=N` replays, and failures print `SEED=N replay: ./gradlew <task> --tests ... -Pseed=N` (checked with a planted failure).
 - [x] M1-T5 Crypto — `Hashing`, `SimpleMerkle` (+ `rootOfList` for txRoot, index as key), `Signer` (incl. deterministic `fromSeed`: the JDK derives the key from a 32-byte RFC 8032 seed, no hand-written crypto), `SignatureVerifier` (+ `Ed25519Verifier`, never throws), `CachingVerifier` (positive-only, FIFO, 2^18, caches only 44-byte keys and 64-byte sigs so keys are unambiguous), `CryptoException`. KATs: Merkle roots computed independently with Python hashlib; RFC 8032 vectors 1 and 2 pass.
 - [x] M1-T6 Test kit seeds — `Fixtures` (keys derived as `Signer.fromSeed(sha256("mizan-fixture-<kind>" || id))`, genesis fixture with BASE/QUOTE and ALT/QUOTE instruments and n validators), `SignedCommands` (sign/register/deposit/limit/market/cancel + `withBadSignature`, `signedByWrongKey`). Stored vector: admin public key, computed independently with Python `cryptography`.
-- [ ] M1-T7 Docs
+- [x] M1-T7 Docs — `docs/assumptions.md` (spec §1, fault/storage/clock/crypto assumptions, ack contract), ADRs 0001–0003, README stub linking every doc and ADR (all links checked).
 
 ## M2
 - [ ] M2-T1 Orders
