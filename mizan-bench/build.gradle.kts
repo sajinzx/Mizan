@@ -8,4 +8,19 @@ dependencies {
     implementation(project(":mizan-testkit"))
 }
 
-jmh { jmhVersion.set(libs.versions.jmh.get()) }
+// Defaults for the published baseline (docs/bench/baseline.md).
+// -Pjmh.includes=<regex> selects benchmarks; -Pjmh.quick runs a 1-fork smoke test.
+val quick = providers.gradleProperty("jmh.quick").isPresent
+jmh {
+    jmhVersion.set(libs.versions.jmh.get())
+    warmupIterations.set(if (quick) 1 else 3)
+    warmup.set(if (quick) "1s" else "2s")
+    iterations.set(if (quick) 1 else 5)
+    timeOnIteration.set(if (quick) "1s" else "2s")
+    fork.set(if (quick) 1 else 2)
+    timeUnit.set("us")
+    resultFormat.set("JSON")
+    resultsFile.set(layout.buildDirectory.file("results/jmh/results.json"))
+    humanOutputFile.set(layout.buildDirectory.file("results/jmh/human.txt"))
+    providers.gradleProperty("jmh.includes").orNull?.let { includes.add(it) }
+}
