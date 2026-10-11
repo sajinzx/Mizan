@@ -1,5 +1,5 @@
 # Progress
-Current milestone: M1   Last gate passed: none
+Current milestone: M1 (gate pending CI check)   Last gate passed: none
 Decisions/ADRs: see docs/adr/ (0001–0003 design; 0004 naming, 0005 toolchain versions, 0006 test-scope testkit edges, 0007 core type placement)
 
 ## M1
@@ -10,6 +10,12 @@ Decisions/ADRs: see docs/adr/ (0001–0003 design; 0004 naming, 0005 toolchain v
 - [x] M1-T5 Crypto — `Hashing`, `SimpleMerkle` (+ `rootOfList` for txRoot, index as key), `Signer` (incl. deterministic `fromSeed`: the JDK derives the key from a 32-byte RFC 8032 seed, no hand-written crypto), `SignatureVerifier` (+ `Ed25519Verifier`, never throws), `CachingVerifier` (positive-only, FIFO, 2^18, caches only 44-byte keys and 64-byte sigs so keys are unambiguous), `CryptoException`. KATs: Merkle roots computed independently with Python hashlib; RFC 8032 vectors 1 and 2 pass.
 - [x] M1-T6 Test kit seeds — `Fixtures` (keys derived as `Signer.fromSeed(sha256("mizan-fixture-<kind>" || id))`, genesis fixture with BASE/QUOTE and ALT/QUOTE instruments and n validators), `SignedCommands` (sign/register/deposit/limit/market/cancel + `withBadSignature`, `signedByWrongKey`). Stored vector: admin public key, computed independently with Python `cryptography`.
 - [x] M1-T7 Docs — `docs/assumptions.md` (spec §1, fault/storage/clock/crypto assumptions, ack contract), ADRs 0001–0003, README stub linking every doc and ADR (all links checked).
+
+**Gate M1 status (2026-10-12):**
+- [x] A fresh clone builds green with `./gradlew build` (44 tests; `checkModuleGraph`: 36 edges, all allowed).
+- [x] `checkModuleGraph` is enforced (hooked into `check`; a planted bad edge fails it).
+- [x] Codec fuzz ≥ 100k cases yields only `ProtocolException` (200k random + 100k mutated per run).
+- [ ] CI turns red on a planted failure. **Blocked:** no GitHub remote yet (see M1-T2).
 
 ## M2
 - [ ] M2-T1 Orders
