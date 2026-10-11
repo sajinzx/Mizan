@@ -193,7 +193,7 @@ public final class ReferenceEngine {
     String authError = authError(sc);
     if (authError != null) {
       l.onReject(sc.accountId(), ref, authError);
-      return ExecResult.authFailed(authError);
+      return ExecResult.authFailed(0, authError);
     }
     if (sc.body() instanceof Register r) {
       accounts.put(sc.accountId(), new Acct(r.pubKey().clone(), sc.nonce()));
@@ -211,7 +211,7 @@ public final class ReferenceEngine {
       return ExecResult.accepted(id);
     } catch (Reject e) {
       l.onReject(sc.accountId(), ref, e.getMessage());
-      return ExecResult.rejected(e.getMessage());
+      return ExecResult.rejected(0, e.getMessage());
     }
   }
 

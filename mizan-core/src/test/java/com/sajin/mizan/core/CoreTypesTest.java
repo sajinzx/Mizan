@@ -110,10 +110,11 @@ class CoreTypesTest {
   @Test
   void execResultFactories() {
     assertThat(ExecResult.accepted(42))
-        .isEqualTo(new ExecResult(ExecResult.Status.ACCEPTED, 42, null));
-    assertThat(ExecResult.rejected("x").status()).isEqualTo(ExecResult.Status.REJECTED);
-    assertThat(ExecResult.rejected("x").orderId()).isZero();
-    assertThat(ExecResult.authFailed("y").reason()).isEqualTo("y");
+        .isEqualTo(new ExecResult(ExecResult.Status.ACCEPTED, 42, 0, null));
+    assertThat(ExecResult.rejected(1, "x").status()).isEqualTo(ExecResult.Status.REJECTED);
+    assertThat(ExecResult.rejected(1, "x").orderId()).isZero();
+    assertThat(ExecResult.authFailed(4, "y").reason()).isEqualTo("y");
+    assertThat(ExecResult.authFailed(4, "y").reasonCode()).isEqualTo(4);
   }
 
   @Test

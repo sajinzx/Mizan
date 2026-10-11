@@ -139,7 +139,7 @@ public final class ExecutionCore {
       authenticate(sc);
     } catch (OrderRejectedException e) {
       l.onReject(sc.accountId(), refOf(sc.body()), e.getMessage());
-      return ExecResult.authFailed(e.getMessage());
+      return ExecResult.authFailed(e.reasonCode(), e.getMessage());
     }
     if (!(sc.body() instanceof Register)) {
       ledger.consumeNonce(sc.accountId(), sc.nonce());
@@ -158,7 +158,7 @@ public final class ExecutionCore {
       return ExecResult.accepted(id);
     } catch (OrderRejectedException e) {
       l.onReject(sc.accountId(), refOf(sc.body()), e.getMessage());
-      return ExecResult.rejected(e.getMessage());
+      return ExecResult.rejected(e.reasonCode(), e.getMessage());
     }
   }
 
@@ -356,6 +356,13 @@ public final class ExecutionCore {
   /** Sum of free + held of {@code asset} over all accounts, including the fee account. */
   public long ledgerTotal(int asset) {
     return ledger.total(asset);
+  }
+
+  /**
+   * Sum of all successful deposits of {@code asset}; equals {@link #ledgerTotal} (conservation).
+   */
+  public long supply(int asset) {
+    return ledger.supply(asset);
   }
 
   public void forEachBalance(Ledger.BalanceVisitor v) {
