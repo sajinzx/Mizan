@@ -1,6 +1,7 @@
 dependencies {
     implementation(project(":mizan-core"))
     implementation(project(":mizan-crypto"))
+    implementation(libs.agrona)
 
     testImplementation(project(":mizan-testkit"))
     testImplementation(libs.archunit.junit5)

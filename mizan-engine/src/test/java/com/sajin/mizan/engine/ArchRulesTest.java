@@ -44,7 +44,7 @@ class ArchRulesTest {
           "deterministic engine code",
           c ->
               (c.getPackageName().equals("com.sajin.mizan.engine")
-                      && !c.getSimpleName().startsWith("Sequencer"))
+                      && !c.getName().startsWith(Sequencer.class.getName()))
                   || c.isEquivalentTo(SimpleMerkle.class)
                   || c.getName().startsWith(SimpleMerkle.class.getName() + "$")
                   || c.isEquivalentTo(Hashing.class));

@@ -12,6 +12,9 @@ plugins {
 // Shared conventions for every module.
 // ---------------------------------------------------------------------------------------------
 
+/** Agrona 2.x reads jdk.internal.misc.Unsafe; every JVM that runs Agrona queues needs this. */
+val agronaJvmArgs = listOf("--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED")
+
 /** Tags excluded from the default `test` task (spec §3.1). */
 val longRunningTags = arrayOf("slow", "recovery", "sim")
 
@@ -63,6 +66,7 @@ subprojects {
 
     tasks.withType<Test>().configureEach {
         maxHeapSize = "1g"
+        jvmArgs(agronaJvmArgs)
         systemProperty("jqwik.database", layout.buildDirectory.file("jqwik-database").get().asFile.path)
         systemProperty("mizan.gradleTask", path) // for seed replay hints
         systemProperty("mizan.iter", iter.get())

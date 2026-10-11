@@ -32,6 +32,7 @@ Randomized tests print `SEED=<n>` and a replay command on failure. Re-run with `
   - [0007 Core type placement](docs/adr/0007-core-type-placement.md)
   - [0008 Engine semantics clarifications](docs/adr/0008-engine-semantics-clarifications.md)
   - [0009 Test signer and architecture scans](docs/adr/0009-test-signing-and-arch-scans.md)
+  - [0010 Sequencer batching and backpressure](docs/adr/0010-sequencer-batching.md)
 
 ## Modules
 
