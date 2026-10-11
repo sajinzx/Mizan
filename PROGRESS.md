@@ -4,7 +4,7 @@ Decisions/ADRs: see docs/adr/ (0004 naming, 0005 toolchain versions, 0006 test-s
 
 ## M1
 - [x] M1-T1 Scaffold — Gradle 9.8.0 wrapper (sha256-pinned), 11 modules, Java 21 toolchain via foojay, Spotless (gjf 1.36.1), Error Prone 2.50.0, `-Xlint:all -Werror` everywhere (stricter than "in CI"), JaCoCo, tasks `nightly`/`recoveryTest`/`simSweep`, `checkModuleGraph` hooked into `check`. Verified: planted `core -> engine` edge fails `checkModuleGraph` ("forbidden edge core -> engine (implementation)"). Deferred: JavaFX plugin is not applied to `mizan-ui` until M5-T4 (catalog entry exists). Known: one Gradle-11 deprecation (`Configuration.setVisible`) comes from a third-party plugin, not our scripts.
-- [ ] M1-T2 CI
+- [~] M1-T2 CI — `ci.yml` (build on push/PR) and `nightly.yml` (cron 03:17 UTC + manual; matrix: nightly, simSweep -Pseeds=1000, recoveryTest -Piter=200) written; the three long tasks run green locally. **Verification pending:** no GitHub remote yet. After pushing, plant a failing test on a throwaway branch, confirm CI goes red, remove it, and confirm `main` is green.
 - [ ] M1-T3 Core types
 - [ ] M1-T4 CommandCodec
 - [ ] M1-T5 Crypto
