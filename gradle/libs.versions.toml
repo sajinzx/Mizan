@@ -1,0 +1,40 @@
+# Pinned at project start (2026-10-12): newest stable releases at least two weeks old.
+# JUnit stays on 5.14.x because jqwik 1.10.x is built against JUnit Platform 1.14.
+[versions]
+junit = "5.14.4"
+jqwik = "1.10.1"
+assertj = "3.27.7"
+archunit = "1.5.1"
+agrona = "2.6.1"
+hdrhistogram = "2.2.2"
+jackson = "2.22.3"
+picocli = "4.7.7"
+slf4j = "2.0.20"
+logback = "1.6.4"
+errorprone = "2.50.0"
+googleJavaFormat = "1.36.1"
+jmh = "1.37"
+javafx = "21.0.12"
+
+[libraries]
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+jqwik = { module = "net.jqwik:jqwik", version.ref = "jqwik" }
+assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
+agrona = { module = "org.agrona:agrona", version.ref = "agrona" }
+hdrhistogram = { module = "org.hdrhistogram:HdrHistogram", version.ref = "hdrhistogram" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+errorprone-core = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
+jmh-core = { module = "org.openjdk.jmh:jmh-core", version.ref = "jmh" }
+jmh-generator = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh" }
+
+[plugins]
+spotless = { id = "com.diffplug.spotless", version = "8.9.0" }
+errorprone = { id = "net.ltgt.errorprone", version = "5.1.1" }
+jmh = { id = "me.champeau.jmh", version = "0.7.3" }
+javafx = { id = "org.openjfx.javafxplugin", version = "0.1.0" }

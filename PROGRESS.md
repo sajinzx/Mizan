@@ -1,0 +1,63 @@
+# Progress
+Current milestone: M1   Last gate passed: none
+Decisions/ADRs: see docs/adr/ (0004 naming, 0005 toolchain versions, 0006 test-scope testkit edges)
+
+## M1
+- [x] M1-T1 Scaffold — Gradle 9.8.0 wrapper (sha256-pinned), 11 modules, Java 21 toolchain via foojay, Spotless (gjf 1.36.1), Error Prone 2.50.0, `-Xlint:all -Werror` everywhere (stricter than "in CI"), JaCoCo, tasks `nightly`/`recoveryTest`/`simSweep`, `checkModuleGraph` hooked into `check`. Verified: planted `core -> engine` edge fails `checkModuleGraph` ("forbidden edge core -> engine (implementation)"). Deferred: JavaFX plugin is not applied to `mizan-ui` until M5-T4 (catalog entry exists). Known: one Gradle-11 deprecation (`Configuration.setVisible`) comes from a third-party plugin, not our scripts.
+- [ ] M1-T2 CI
+- [ ] M1-T3 Core types
+- [ ] M1-T4 CommandCodec
+- [ ] M1-T5 Crypto
+- [ ] M1-T6 Test kit seeds
+- [ ] M1-T7 Docs
+
+## M2
+- [ ] M2-T1 Orders
+- [ ] M2-T2 PriceLevel
+- [ ] M2-T3 OrderBook
+- [ ] M2-T4 Ledger
+- [ ] M2-T5 ExecutionCore
+- [ ] M2-T6 Genesis bootstrap
+- [ ] M2-T7 State root v1
+- [ ] M2-T8 StateCodec
+- [ ] M2-T9 ReferenceEngine
+- [ ] M2-T10 Properties
+- [ ] M2-T11 Arch rules
+
+## M3
+- [ ] M3-T1 Sequencer
+- [ ] M3-T2 AuditTap
+- [ ] M3-T3 Mempool
+- [ ] M3-T4 JMH harness
+- [ ] M3-T5 Publish baseline
+
+## M4
+- [ ] M4-T1 FrameCodec
+- [ ] M4-T2 TcpGateway
+- [ ] M4-T3 ResultCache + QUERY_STATUS
+- [ ] M4-T4 Hardening
+- [ ] M4-T5 Client + load
+
+## M5
+- [ ] M5-T1 Market event queue
+- [ ] M5-T2 MarketDataThread + DepthBook
+- [ ] M5-T3 UDP publisher/subscriber
+- [ ] M5-T4 Minimal JavaFX ladder
+
+## M6
+- [ ] M6-T1 Blocks
+- [ ] M6-T2 Genesis loader
+- [ ] M6-T3 BlockStore
+- [ ] M6-T4 SnapshotStore
+- [ ] M6-T5 Recovery
+- [ ] M6-T6 ConsensusEngine / SingleNodeConsensus
+- [ ] M6-T7 Commit path + FINAL
+- [ ] M6-T8 Speculative/committed split + rollback
+- [ ] M6-T9 Node wiring
+- [ ] M6-T10 Crash test
+
+## M7–M10
+See spec §8; expand here when M6's gate passes.
+
+## Known issues / deferred
+- JavaFX plugin application deferred to M5-T4.
