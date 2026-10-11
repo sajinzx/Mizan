@@ -6,4 +6,5 @@ dependencies {
     implementation(project(":mizan-net"))
     implementation(project(":mizan-testkit"))
     implementation(libs.agrona)
+    implementation(libs.hdrhistogram)
 }
