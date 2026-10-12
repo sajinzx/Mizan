@@ -150,6 +150,30 @@ public final class SimCluster {
   private final java.util.Map<Long, byte[]> decidedHash = new java.util.HashMap<>();
   private final java.util.Map<Long, Integer> decidedBy = new java.util.HashMap<>();
   private String firstConflict;
+  private RoundListener roundListener;
+  private long syncedBlocks;
+
+  /** Notified when an honest validator starts a round (for phase-targeted faults). */
+  @FunctionalInterface
+  public interface RoundListener {
+    void roundStarted(int validator, long height, int round);
+  }
+
+  public void onRoundStarted(RoundListener l) {
+    this.roundListener = l;
+  }
+
+  /** Blocks applied through bulk sync (including by validator incarnations since replaced). */
+  public long syncedBlocks() {
+    long live = 0;
+    for (Validator v : validators) {
+      if (v.bft != null) {
+        live += v.bft.syncedBlocks();
+      }
+    }
+    return syncedBlocks + live;
+  }
+
   private final MessageSigner[] signers;
   private final SignatureVerifier verifier = CommandSigner.FAST_VERIFIER;
 
@@ -216,6 +240,13 @@ public final class SimCluster {
                     + height
                     + " r="
                     + round);
+          }
+
+          @Override
+          public void roundStarted(long height, int round) {
+            if (roundListener != null) {
+              roundListener.roundStarted(v.index, height, round);
+            }
           }
         };
     v.bft =
@@ -298,6 +329,10 @@ public final class SimCluster {
 
   /** Restarts validator {@code i} from its durable chain and safety state. */
   public void restart(int i) {
+    Validator v = validators.get(i);
+    if (v.bft != null) {
+      syncedBlocks += v.bft.syncedBlocks();
+    }
     world.revive(i);
     startHonest(validators.get(i));
   }
