@@ -14,14 +14,29 @@ import java.util.Objects;
 /**
  * {@code Block = header || count:4 || (len:4 || raw)*} (§5.7). {@code txRoot} is the {@link
  * SimpleMerkle#rootOfList} over each command's raw envelope, in order.
+ *
+ * <p>Immutable. The block hash is computed once and cached, because consensus looks it up many
+ * times per message.
  */
-public record Block(BlockHeader header, List<SignedCommand> commands) {
+public final class Block {
   /** Hard cap on commands per block, independent of genesis tuning. */
   public static final int MAX_COMMANDS = 100_000;
 
-  public Block {
-    Objects.requireNonNull(header, "header");
-    commands = List.copyOf(commands);
+  private final BlockHeader header;
+  private final List<SignedCommand> commands;
+  private byte[] hash;
+
+  public Block(BlockHeader header, List<SignedCommand> commands) {
+    this.header = Objects.requireNonNull(header, "header");
+    this.commands = List.copyOf(commands);
+  }
+
+  public BlockHeader header() {
+    return header;
+  }
+
+  public List<SignedCommand> commands() {
+    return commands;
   }
 
   public static byte[] txRoot(List<SignedCommand> commands) {
@@ -35,8 +50,14 @@ public record Block(BlockHeader header, List<SignedCommand> commands) {
     return Arrays.equals(header.txRoot(), txRoot(commands));
   }
 
+  /** {@code SHA256(header)}. Returns a copy of the cached value. */
   public byte[] hash() {
-    return header.hash();
+    byte[] h = hash;
+    if (h == null) {
+      h = header.hash();
+      hash = h;
+    }
+    return h.clone();
   }
 
   public long height() {
@@ -44,11 +65,7 @@ public record Block(BlockHeader header, List<SignedCommand> commands) {
   }
 
   public byte[] encode() {
-    int size = BlockHeader.BYTES + 4;
-    for (SignedCommand c : commands) {
-      size += 4 + c.raw().length;
-    }
-    ByteBuffer b = ByteBuffer.allocate(size);
+    ByteBuffer b = ByteBuffer.allocate(encodedSize());
     write(b);
     return b.array();
   }
@@ -98,5 +115,23 @@ public record Block(BlockHeader header, List<SignedCommand> commands) {
       throw new ProtocolException("trailing bytes after block");
     }
     return block;
+  }
+
+  /** Equal iff the encodings are equal. */
+  @Override
+  public boolean equals(Object o) {
+    return o instanceof Block other
+        && Arrays.equals(hash(), other.hash())
+        && Arrays.equals(encode(), other.encode());
+  }
+
+  @Override
+  public int hashCode() {
+    return Arrays.hashCode(hash());
+  }
+
+  @Override
+  public String toString() {
+    return "Block[" + header + ", " + commands.size() + " commands]";
   }
 }
