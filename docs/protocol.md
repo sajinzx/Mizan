@@ -85,4 +85,6 @@ On decide, the validator persists `block || cert` (fsync), applies it to its com
 - Retransmission of current-round messages replaces the paper's assumed reliable gossip.
 - Messages for height `h + 1` are buffered (one height ahead) rather than gossiped later; lagging nodes catch up through block sync (M8), which verifies commit certificates.
 - No vote extensions, no evidence handling beyond logging, a static validator set, and no light-client headers beyond `CommittedBlock`.
+- **Re-sending a signed vote after a restart:** if the WAL shows a vote already signed at the current `(h, r, type)`, the validator re-sends that exact vote instead of evaluating the rule again. It never signs a different vote there, and never signs for an earlier position (ADR 0014).
+- **Empty blocks:** when the proposer has no sequencer draft for a while, it proposes an empty block so that heights keep advancing (ADR 0014).
 - **Simulator-only signature scheme:** seed sweeps sign messages with a fast stand-in (`SHA-512(pk || msg)`, ADR 0014) so that 1,000-seed matrices finish in minutes. The Byzantine model in the simulator only signs as itself, so the stand-in's forgeability does not weaken what the sweeps show. TCP runs and unit tests use real Ed25519.

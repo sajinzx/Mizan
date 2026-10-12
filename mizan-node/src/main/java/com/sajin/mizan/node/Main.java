@@ -17,7 +17,12 @@ import picocli.CommandLine.Option;
     mixinStandardHelpOptions = true,
     version = "mizan 0.1.0",
     description = "Deterministic order-book chain (educational; simulated assets only).",
-    subcommands = {Main.NodeCmd.class, Main.LoadCmd.class, Main.GenesisCmd.class})
+    subcommands = {
+      Main.NodeCmd.class,
+      Main.LoadCmd.class,
+      Main.GenesisCmd.class,
+      Main.ClusterCmd.class
+    })
 public final class Main implements Callable<Integer> {
 
   public static void main(String[] args) {
@@ -101,6 +106,80 @@ public final class Main implements Callable<Integer> {
               + node.marketDataPort()
               + "  height "
               + node.height());
+      done.await();
+      return 0;
+    }
+  }
+
+  /**
+   * {@code mizan cluster --nodes 4}: a local BFT cluster in one process (dev genesis, public dev
+   * keys). Validator 0 is the proposer and hosts the client gateway and market data; the others are
+   * followers. Each validator has its own data directory, block log and consensus WAL.
+   */
+  @Command(
+      name = "cluster",
+      mixinStandardHelpOptions = true,
+      description = "Run a local n-validator BFT cluster (dev keys; local use only).")
+  static final class ClusterCmd implements Callable<Integer> {
+    @Option(names = "--nodes", defaultValue = "4")
+    int nodes;
+
+    @Option(names = "--data", defaultValue = "cluster-data")
+    Path data;
+
+    @Option(
+        names = "--port",
+        defaultValue = "9000",
+        description = "Gateway TCP port of validator 0.")
+    int port;
+
+    @Option(names = "--md-port", defaultValue = "9001")
+    int mdPort;
+
+    @Override
+    public Integer call() throws Exception {
+      GenesisConfig g = DevGenesis.config(nodes);
+      java.nio.file.Files.createDirectories(data);
+      GenesisJson.write(g, data.resolve("genesis.json"));
+      com.sajin.mizan.chain.bft.RoundBft.ProposerFn proposer =
+          com.sajin.mizan.chain.bft.RoundBft.ProposerFn.fixed(0);
+      Node leader =
+          Node.startBft(
+              Node.Settings.dev(g, port).withMarketData(mdPort),
+              Node.Persistence.at(data.resolve("v0")),
+              DevGenesis.validatorKey(0),
+              0,
+              proposer,
+              List.of(),
+              List.of());
+      List<FollowerValidator> followers = new java.util.ArrayList<>();
+      for (int i = 1; i < nodes; i++) {
+        followers.add(
+            FollowerValidator.start(
+                g,
+                Node.Persistence.at(data.resolve("v" + i)),
+                DevGenesis.validatorKey(i),
+                i,
+                proposer));
+      }
+      CountDownLatch done = new CountDownLatch(1);
+      Runtime.getRuntime()
+          .addShutdownHook(
+              new Thread(
+                  () -> {
+                    leader.close();
+                    followers.forEach(FollowerValidator::close);
+                    done.countDown();
+                  },
+                  "shutdown"));
+      System.out.println(
+          nodes
+              + " validators up; gateway 127.0.0.1:"
+              + leader.gatewayPort()
+              + "  market data udp 127.0.0.1:"
+              + leader.marketDataPort()
+              + "  data "
+              + data.toAbsolutePath());
       done.await();
       return 0;
     }

@@ -22,6 +22,7 @@ Randomized tests print `SEED=<n>` and a replay command on failure. Re-run with `
 - [Implementation spec](implementation-claude-code.md): design, contracts, milestones, gates
 - [Progress](PROGRESS.md)
 - [Assumptions](docs/assumptions.md)
+- [Consensus protocol](docs/protocol.md) · [Threat model](docs/threat-model.md) · [Benchmark baseline](docs/bench/baseline.md)
 - Architecture decisions:
   - [0001 Single-writer sequencer](docs/adr/0001-single-writer.md)
   - [0002 Block log is the WAL](docs/adr/0002-block-log-is-wal.md)
@@ -33,6 +34,10 @@ Randomized tests print `SEED=<n>` and a replay command on failure. Re-run with `
   - [0008 Engine semantics clarifications](docs/adr/0008-engine-semantics-clarifications.md)
   - [0009 Test signer and architecture scans](docs/adr/0009-test-signing-and-arch-scans.md)
   - [0010 Sequencer batching and backpressure](docs/adr/0010-sequencer-batching.md)
+  - [0011 Gateway design](docs/adr/0011-gateway-design.md)
+  - [0012 Market data](docs/adr/0012-market-data.md)
+  - [0013 Persistence and recovery](docs/adr/0013-persistence-and-recovery.md)
+  - [0014 BFT implementation](docs/adr/0014-bft-implementation.md)
 
 ## Modules
 
