@@ -162,6 +162,7 @@ public final class Node implements AutoCloseable {
             metrics);
     seqRef[0] = sequencer;
     metrics.gauge("chain_height", chain::height);
+    gateway.setChainInfoProvider(chain::chainInfo);
   }
 
   private void startThreads() throws IOException {
@@ -348,6 +349,11 @@ public final class Node implements AutoCloseable {
     @Override
     public long height() {
       return driver.height();
+    }
+
+    @Override
+    public com.sajin.mizan.net.Messages.ChainInfo chainInfo() {
+      return ChainInfos.single(driver.head());
     }
 
     @Override

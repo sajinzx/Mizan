@@ -27,10 +27,12 @@ final class InstantChain implements ChainLayer {
   private volatile boolean running = true;
   private final Thread thread;
   private final AtomicLong height = new AtomicLong();
+  private volatile com.sajin.mizan.chain.ChainHead head;
 
   InstantChain(ExecutionCore committed, FinalityListener finality) {
     this.committed = committed;
     this.finality = finality;
+    this.head = new com.sajin.mizan.chain.ChainHead(0, new byte[32], committed.stateRoot());
     this.thread = Thread.ofPlatform().name("consensus").daemon(true).unstarted(this::loop);
   }
 
@@ -59,6 +61,7 @@ final class InstantChain implements ChainLayer {
               "committed root differs from draft root at " + (height.get() + 1));
         }
         long h = height.incrementAndGet();
+        head = new com.sajin.mizan.chain.ChainHead(h, new byte[32], d.stateRoot()); // no blocks
         while (!sequencer.control(new Sequencer.Committed(h))) {
           Thread.onSpinWait();
         }
@@ -72,6 +75,11 @@ final class InstantChain implements ChainLayer {
   @Override
   public long height() {
     return height.get();
+  }
+
+  @Override
+  public com.sajin.mizan.net.Messages.ChainInfo chainInfo() {
+    return ChainInfos.single(head);
   }
 
   @Override

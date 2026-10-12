@@ -57,4 +57,36 @@ class LadderModelTest {
         .contains("snapshots 2")
         .contains("REVOKED from trade #25");
   }
+
+  @Test
+  void depthCurvesAreCumulativeFromTheBest() {
+    LadderModel m = new LadderModel(2);
+    m.setBook(
+        List.of(
+            new DepthBook.Level(100, 5), new DepthBook.Level(99, 10), new DepthBook.Level(97, 1)),
+        List.of(new DepthBook.Level(101, 2), new DepthBook.Level(105, 8)));
+    assertThat(m.bidCurve())
+        .containsExactly(
+            new LadderModel.DepthPoint(100, 5),
+            new LadderModel.DepthPoint(99, 15),
+            new LadderModel.DepthPoint(97, 16));
+    assertThat(m.askCurve())
+        .containsExactly(new LadderModel.DepthPoint(101, 2), new LadderModel.DepthPoint(105, 10));
+    m.setBook(List.of(), List.of());
+    assertThat(m.bidCurve()).isEmpty();
+  }
+
+  @Test
+  void revokeBannerFlashesForThreeSeconds() {
+    LadderModel m = new LadderModel(1);
+    assertThat(m.revokeFlash(0)).isFalse();
+    m.onRevoke(7, 10_000);
+    assertThat(m.revokeFlash(10_000)).isTrue();
+    assertThat(m.revokeFlash(10_000 + LadderModel.REVOKE_FLASH_MS - 1)).isTrue();
+    assertThat(m.revokeFlash(10_000 + LadderModel.REVOKE_FLASH_MS)).isFalse();
+    m.onRevoke(9, 20_000);
+    assertThat(m.revokeCount()).isEqualTo(2);
+    assertThat(m.lastRevokeFrom()).isEqualTo(9);
+    assertThat(m.revokeFlash(20_500)).isTrue();
+  }
 }

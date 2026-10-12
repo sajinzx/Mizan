@@ -23,6 +23,7 @@ public final class FrameCodec {
   public static final int ORDER = 0x01;
   public static final int QUERY_STATUS = 0x02;
   public static final int SNAPSHOT_REQ = 0x03;
+  public static final int CHAIN_INFO_REQ = 0x04;
   // Server -> client
   public static final int BUSY = 0x10;
   public static final int ACCEPTED_PROVISIONAL = 0x11;
@@ -33,6 +34,7 @@ public final class FrameCodec {
   public static final int TRADE = 0x20;
   public static final int REVOKE = 0x21;
   public static final int SNAPSHOT = 0x22;
+  public static final int CHAIN_INFO = 0x23;
   // Peer -> peer (M7+)
   public static final int PEER = 0x40;
   public static final int PEER_CHALLENGE = 0x41;

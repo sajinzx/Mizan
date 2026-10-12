@@ -281,9 +281,17 @@ public final class Main implements Callable<Integer> {
     @Option(names = "--first-account", defaultValue = "1000")
     long firstAccount;
 
+    @Option(
+        names = "--instruments",
+        defaultValue = "1",
+        description = "Spread orders over 1 or 2 instruments (dev genesis).")
+    int instruments;
+
     @Override
     public Integer call() throws Exception {
-      var p = LoadGenerator.Params.of(host, port, traders, orders, firstAccount, 1);
+      var p =
+          LoadGenerator.Params.of(host, port, traders, orders, firstAccount, 1)
+              .withInstruments(instruments);
       LoadGenerator.setup(p);
       LoadGenerator.Result r = LoadGenerator.run(p);
       r.print(System.out);

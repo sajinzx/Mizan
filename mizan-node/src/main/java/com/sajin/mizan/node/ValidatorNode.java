@@ -162,6 +162,7 @@ public final class ValidatorNode implements AutoCloseable {
             new BftDriver.Rotation(pool, gateway, Listeners.engine(committedListeners), 1_000));
     ref[0] = driver;
     metrics.gauge("chain_height", driver::height);
+    gateway.setChainInfoProvider(() -> ChainInfos.bft(driver, me, g.validators().size()));
     UdpHeartbeat hb =
         new UdpHeartbeat(
             me, BftSetup.peers(g), driver::height, driver::headHash, driver::onPeerHeight, 500, 0);

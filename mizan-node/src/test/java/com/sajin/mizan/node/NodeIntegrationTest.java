@@ -106,6 +106,37 @@ class NodeIntegrationTest {
     assertConservation(node.committedCore());
   }
 
+  /** M9-T6: two instruments trade in one chain; conservation holds for every asset. */
+  @Test
+  void twoInstrumentsInOneChain() throws Exception {
+    java.util.Map<Integer, java.util.concurrent.atomic.AtomicLong> trades =
+        new java.util.concurrent.ConcurrentHashMap<>();
+    com.sajin.mizan.core.EngineListener byInstrument =
+        new com.sajin.mizan.core.EngineListener() {
+          @Override
+          public void onTrade(com.sajin.mizan.core.Trade t) {
+            trades
+                .computeIfAbsent(t.instrument(), k -> new java.util.concurrent.atomic.AtomicLong())
+                .incrementAndGet();
+          }
+        };
+    Node node = Node.startInMemory(Node.Settings.dev(G, 0), List.of(byInstrument));
+    try {
+      var p =
+          LoadGenerator.Params.of("127.0.0.1", node.gatewayPort(), 6, 80, 300, 13)
+              .withInstruments(2);
+      LoadGenerator.setup(p);
+      assertThat(LoadGenerator.run(p).errors()).isZero();
+      awaitHeightStable(node);
+    } finally {
+      node.close();
+    }
+    assertThat(trades).containsKeys(1, 2);
+    assertThat(trades.get(1).get()).isPositive();
+    assertThat(trades.get(2).get()).isPositive();
+    assertConservation(node.committedCore());
+  }
+
   /** M4 gate: 100 traders × 1,000 orders over TCP; conservation afterwards. */
   @Test
   @Tag("slow")

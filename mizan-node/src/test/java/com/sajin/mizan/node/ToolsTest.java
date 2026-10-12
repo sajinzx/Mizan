@@ -38,6 +38,7 @@ class ToolsTest {
   @Test
   void verifyChainAcceptsARealChainAndRejectsTampering() throws Exception {
     Path data = dir.resolve("data");
+    com.sajin.mizan.net.Messages.ChainInfo info;
     Node node =
         Node.startPersistent(
             Node.Settings.dev(G, 0),
@@ -50,15 +51,25 @@ class ToolsTest {
       LoadGenerator.setup(p);
       assertThat(LoadGenerator.run(p).errors()).isZero();
       NodeIntegrationTest.awaitHeightStable(node);
+      info =
+          new com.sajin.mizan.net.ChainInfoFetcher(
+                  new java.net.InetSocketAddress(
+                      java.net.InetAddress.getLoopbackAddress(), node.gatewayPort()))
+              .fetch();
     } finally {
       node.close();
     }
     long height = node.height();
+    assertThat(info.height()).isEqualTo(height);
     String root = HexFormat.of().formatHex(node.committedCore().stateRoot());
 
     Run ok = verify(G, data);
     assertThat(ok.code()).as(ok.out()).isZero();
     assertThat(ok.out()).contains("OK: height " + height).contains("root  " + root);
+    assertThat(ok.out())
+        .as("CHAIN_INFO agrees with verify-chain")
+        .contains("head  " + HexFormat.of().formatHex(info.headHash()))
+        .contains("root  " + HexFormat.of().formatHex(info.stateRoot()));
     assertThat(ok.out()).containsPattern("[12] snapshot\\(s\\) checked");
 
     // Read-only: a torn tail is reported, not truncated.

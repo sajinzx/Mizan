@@ -47,6 +47,8 @@ public final class MizanClient implements AutoCloseable {
         }
       };
   private volatile CompletableFuture<Messages.Snapshot> pendingSnapshot = new CompletableFuture<>();
+  private volatile CompletableFuture<Messages.ChainInfo> pendingChainInfo =
+      new CompletableFuture<>();
   private final Consumer<ServerMessage> pushes;
   private final Thread reader;
   private volatile IOException failure;
@@ -110,6 +112,7 @@ public final class MizanClient implements AutoCloseable {
         pushes.accept(e);
         fail(new IOException("server error " + e.code()));
       }
+      case Messages.ChainInfo c -> pendingChainInfo.complete(c);
       case Messages.TradeMsg t -> pushes.accept(t);
       case Messages.Revoke r -> pushes.accept(r);
     }
@@ -131,6 +134,7 @@ public final class MizanClient implements AutoCloseable {
     finals.values().forEach(f -> f.completeExceptionally(e));
     statuses.values().forEach(f -> f.completeExceptionally(e));
     pendingSnapshot.completeExceptionally(e);
+    pendingChainInfo.completeExceptionally(e);
   }
 
   private void write(byte[] frame) throws IOException {
@@ -178,6 +182,14 @@ public final class MizanClient implements AutoCloseable {
     CompletableFuture<Messages.Status> fut = new CompletableFuture<>();
     statuses.put(new Key(account, nonce), fut);
     write(Messages.queryStatus(account, nonce));
+    return fut;
+  }
+
+  /** Requests the node's chain head and validator liveness (M9-T6). */
+  public CompletableFuture<Messages.ChainInfo> requestChainInfo() throws IOException {
+    CompletableFuture<Messages.ChainInfo> fut = new CompletableFuture<>();
+    pendingChainInfo = fut;
+    write(Messages.chainInfoRequest());
     return fut;
   }
 

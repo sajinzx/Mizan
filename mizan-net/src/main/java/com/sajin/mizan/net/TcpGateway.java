@@ -172,6 +172,7 @@ public final class TcpGateway
   private final ConcurrentHashMap<Long, TokenBucket> accountBuckets = new ConcurrentHashMap<>();
   private final AtomicLong connectionIds = new AtomicLong();
   private volatile Supplier<byte[]> snapshotProvider;
+  private volatile Supplier<Messages.ChainInfo> chainInfoProvider;
   private volatile boolean closed;
   private ServerSocket server;
   private Thread acceptor;
@@ -198,6 +199,11 @@ public final class TcpGateway
   /** Supplies {@code SNAPSHOT} payloads for {@code SNAPSHOT_REQ} (market data, M5). */
   public void setSnapshotProvider(Supplier<byte[]> provider) {
     this.snapshotProvider = provider;
+  }
+
+  /** Supplies {@code CHAIN_INFO} answers for {@code CHAIN_INFO_REQ} (M9-T6). */
+  public void setChainInfoProvider(Supplier<Messages.ChainInfo> provider) {
+    this.chainInfoProvider = provider;
   }
 
   public void start() throws IOException {
@@ -481,6 +487,7 @@ public final class TcpGateway
             case FrameCodec.ORDER -> handleOrder(f.payload());
             case FrameCodec.QUERY_STATUS -> handleQuery(f.payload());
             case FrameCodec.SNAPSHOT_REQ -> handleSnapshot();
+            case FrameCodec.CHAIN_INFO_REQ -> handleChainInfo();
             default -> protocolError(Messages.ERR_UNKNOWN_TYPE);
           }
         }
@@ -579,6 +586,15 @@ public final class TcpGateway
         s = new Messages.Status(q[0], q[1], state, e.height(), e.orderId());
       }
       ack(s.encode());
+    }
+
+    private void handleChainInfo() {
+      Supplier<Messages.ChainInfo> p = chainInfoProvider;
+      if (p == null) {
+        protocolError(Messages.ERR_UNKNOWN_TYPE);
+      } else {
+        ack(p.get().encode());
+      }
     }
 
     private void handleSnapshot() {

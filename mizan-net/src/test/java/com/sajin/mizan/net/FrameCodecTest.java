@@ -167,6 +167,33 @@ class FrameCodecTest {
     assertThat(((Messages.Snapshot) Messages.decode(sf)).payload()).isEqualTo(snap);
     assertThat(Messages.parseQuery(Arrays.copyOfRange(Messages.queryStatus(5, 6), 5, 21)))
         .containsExactly(5, 6);
+
+    byte[] head = new byte[32];
+    head[0] = 7;
+    byte[] root = new byte[32];
+    root[31] = 9;
+    Messages.ChainInfo ci =
+        new Messages.ChainInfo(
+            42,
+            head,
+            root,
+            List.of(
+                new Messages.ChainInfo.Validator(0, 42, 0),
+                new Messages.ChainInfo.Validator(1, -1, -1),
+                new Messages.ChainInfo.Validator(3, 41, 700)));
+    Messages.ChainInfo back =
+        (Messages.ChainInfo)
+            Messages.decode(FrameCodec.read(new ByteArrayInputStream(ci.encode())));
+    assertThat(back.height()).isEqualTo(42);
+    assertThat(back.headHash()).isEqualTo(head);
+    assertThat(back.stateRoot()).isEqualTo(root);
+    assertThat(back.validators()).isEqualTo(ci.validators());
+    byte[] payload = Arrays.copyOfRange(ci.encode(), 5, ci.encode().length);
+    for (int cut = 0; cut < payload.length; cut++) { // every truncation is a protocol error
+      byte[] p = Arrays.copyOf(payload, cut);
+      assertThatThrownBy(() -> Messages.decode(new FrameCodec.Frame(FrameCodec.CHAIN_INFO, p)))
+          .isInstanceOf(ProtocolException.class);
+    }
   }
 
   @Test

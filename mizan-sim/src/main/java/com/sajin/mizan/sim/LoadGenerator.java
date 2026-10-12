@@ -44,18 +44,39 @@ public final class LoadGenerator {
       long firstAccount,
       long seed,
       CommandSigner signer,
-      boolean iocOnly) {
+      boolean iocOnly,
+      int instruments) {
 
     /** Real Ed25519 signatures with the fixture keys. */
     public static Params of(
         String host, int port, int traders, int ordersPerTrader, long firstAccount, long seed) {
       return new Params(
-          host, port, traders, ordersPerTrader, firstAccount, seed, CommandSigner.ED25519, false);
+          host,
+          port,
+          traders,
+          ordersPerTrader,
+          firstAccount,
+          seed,
+          CommandSigner.ED25519,
+          false,
+          1);
+    }
+
+    /**
+     * Spreads orders over the first {@code n} fixture instruments (1 = BASE/QUOTE, 2 = ALT/QUOTE).
+     */
+    public Params withInstruments(int n) {
+      if (n < 1 || n > 2) {
+        throw new IllegalArgumentException("the dev genesis has 2 instruments");
+      }
+      return new Params(
+          host, port, traders, ordersPerTrader, firstAccount, seed, signer, iocOnly, n);
     }
 
     /** Only IOC orders: nothing rests, so the book does not grow (soak runs). */
     public Params asIocOnly() {
-      return new Params(host, port, traders, ordersPerTrader, firstAccount, seed, signer, true);
+      return new Params(
+          host, port, traders, ordersPerTrader, firstAccount, seed, signer, true, instruments);
     }
   }
 
@@ -107,7 +128,11 @@ public final class LoadGenerator {
                 Duration.ofSeconds(30)),
             "register " + account,
             true);
-        for (int asset : new int[] {Fixtures.QUOTE, Fixtures.BASE}) {
+        int[] assets =
+            p.instruments() > 1
+                ? new int[] {Fixtures.QUOTE, Fixtures.BASE, Fixtures.ALT}
+                : new int[] {Fixtures.QUOTE, Fixtures.BASE};
+        for (int asset : assets) {
           expectOk(
               admin.submit(
                   p.signer()
@@ -210,7 +235,7 @@ public final class LoadGenerator {
                     nonceBase + k,
                     new Place(
                         clientOrderIds.incrementAndGet(),
-                        Fixtures.INSTRUMENT,
+                        k % p.instruments() == 0 ? Fixtures.INSTRUMENT : Fixtures.ALT_INSTRUMENT,
                         side,
                         OrderType.LIMIT,
                         tif,

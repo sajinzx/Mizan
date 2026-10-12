@@ -56,6 +56,7 @@ public final class ChainDriver implements Consumer<Sequencer.BlockDraft>, AutoCl
   // ---- owned by the consensus thread ----
   private ExecutionCore committed;
   private volatile long height;
+  private volatile ChainHead published;
   private byte[] head;
   private long lastTimestamp;
   private long epoch;
@@ -72,6 +73,7 @@ public final class ChainDriver implements Consumer<Sequencer.BlockDraft>, AutoCl
     this.height = from.height();
     this.head = from.headHash().clone();
     this.lastTimestamp = from.lastTimestampMillis();
+    this.published = new ChainHead(height, head, from.committed().stateRoot());
     this.consensus = consensus;
     this.store = store;
     this.snapshots = snapshots;
@@ -94,6 +96,11 @@ public final class ChainDriver implements Consumer<Sequencer.BlockDraft>, AutoCl
 
   public long height() {
     return height;
+  }
+
+  /** The committed head (any thread). */
+  public ChainHead head() {
+    return published;
   }
 
   /** Non-null if the consensus thread died (the node must halt). */
@@ -160,6 +167,7 @@ public final class ChainDriver implements Consumer<Sequencer.BlockDraft>, AutoCl
     height = cb.height();
     head = cb.block().hash();
     lastTimestamp = cb.block().header().timestampMillis();
+    published = new ChainHead(height, head, cb.block().header().stateRoot());
     if (height % snapshotEvery == 0) {
       FaultPoints.hit(FaultPoints.AFTER_APPEND);
       snapshots.write(height, committed.stateRoot(), StateCodec.encode(committed));

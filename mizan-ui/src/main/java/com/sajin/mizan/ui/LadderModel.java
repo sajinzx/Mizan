@@ -16,6 +16,12 @@ public final class LadderModel {
   public static final int DEPTH = 15;
   public static final int TRADES = 20;
 
+  /** How long the REVOKE banner stays lit after a revoke. */
+  public static final long REVOKE_FLASH_MS = 3_000;
+
+  /** One point of the cumulative depth chart. */
+  public record DepthPoint(long price, long cumulativeQty) {}
+
   /** One ladder row. {@code bar} is 0..1 relative to the largest quantity shown. */
   public record Row(long price, long qty, double bar) {
     public String text() {
@@ -32,6 +38,9 @@ public final class LadderModel {
   private long snapshots;
   private long revokes;
   private long lastRevokeFrom = -1;
+  private long lastRevokeAtMillis = Long.MIN_VALUE;
+  private List<DepthPoint> bidCurve = List.of();
+  private List<DepthPoint> askCurve = List.of();
 
   public LadderModel(int instrument) {
     this.instrument = instrument;
@@ -60,6 +69,29 @@ public final class LadderModel {
     }
     bids = List.copyOf(b);
     asks = List.copyOf(a);
+    bidCurve = cumulative(bidLevels);
+    askCurve = cumulative(askLevels);
+  }
+
+  /** Cumulative quantity from the best level outwards (all levels the view has, not just DEPTH). */
+  private static List<DepthPoint> cumulative(List<DepthBook.Level> levels) {
+    List<DepthPoint> out = new ArrayList<>(levels.size());
+    long sum = 0;
+    for (DepthBook.Level l : levels) {
+      sum += l.qty();
+      out.add(new DepthPoint(l.price(), sum));
+    }
+    return List.copyOf(out);
+  }
+
+  /** Bid depth curve: best (highest) price first, cumulative quantity rising. */
+  public List<DepthPoint> bidCurve() {
+    return bidCurve;
+  }
+
+  /** Ask depth curve: best (lowest) price first, cumulative quantity rising. */
+  public List<DepthPoint> askCurve() {
+    return askCurve;
   }
 
   public void onTrade(MdCodec.TradePrint t) {
@@ -76,6 +108,12 @@ public final class LadderModel {
   }
 
   public void onRevoke(long fromTradeSeq) {
+    onRevoke(fromTradeSeq, System.currentTimeMillis());
+  }
+
+  /** As above at {@code nowMillis} (tests pass a fixed clock). */
+  public void onRevoke(long fromTradeSeq, long nowMillis) {
+    lastRevokeAtMillis = nowMillis;
     revokes++;
     lastRevokeFrom = fromTradeSeq;
     trades.removeIf(s -> tradeSeq(s) >= fromTradeSeq);
@@ -108,6 +146,19 @@ public final class LadderModel {
     return bids.isEmpty() || asks.isEmpty()
         ? -1
         : asks.get(asks.size() - 1).price() - bids.get(0).price();
+  }
+
+  /** Whether the REVOKE banner is lit at {@code nowMillis}. */
+  public boolean revokeFlash(long nowMillis) {
+    return lastRevokeAtMillis != Long.MIN_VALUE && nowMillis - lastRevokeAtMillis < REVOKE_FLASH_MS;
+  }
+
+  public long revokeCount() {
+    return revokes;
+  }
+
+  public long lastRevokeFrom() {
+    return lastRevokeFrom;
   }
 
   public String status() {

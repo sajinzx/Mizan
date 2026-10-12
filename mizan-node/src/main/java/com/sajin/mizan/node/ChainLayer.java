@@ -10,6 +10,9 @@ interface ChainLayer extends Consumer<Sequencer.BlockDraft>, AutoCloseable {
 
   long height();
 
+  /** What {@code CHAIN_INFO} reports (any thread). */
+  com.sajin.mizan.net.Messages.ChainInfo chainInfo();
+
   /** The committed core; only safe to read after {@link #close()}. */
   ExecutionCore committedCore();
 

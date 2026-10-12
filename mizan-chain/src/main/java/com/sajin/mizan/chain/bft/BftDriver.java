@@ -3,6 +3,7 @@ package com.sajin.mizan.chain.bft;
 import com.sajin.mizan.chain.Block;
 import com.sajin.mizan.chain.BlockHeader;
 import com.sajin.mizan.chain.BlockValidator;
+import com.sajin.mizan.chain.ChainHead;
 import com.sajin.mizan.chain.CommitCert;
 import com.sajin.mizan.chain.CommittedBlock;
 import com.sajin.mizan.chain.Recovery;
@@ -105,6 +106,9 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
   private ExecutionCore committed;
   private volatile long height;
   private volatile byte[] head;
+  private volatile ChainHead published;
+  private final java.util.concurrent.atomic.AtomicLongArray lastHeard;
+  private final java.util.concurrent.atomic.AtomicLongArray peerHeights;
   private long headTimestamp;
   private long lastDecidedAt;
   private Sequencer.BlockDraft current;
@@ -136,6 +140,13 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
     this.height = from.height();
     this.head = from.headHash().clone();
     this.headTimestamp = from.lastTimestampMillis();
+    this.published = new ChainHead(height, head, from.committed().stateRoot());
+    this.lastHeard = new java.util.concurrent.atomic.AtomicLongArray(vs.size());
+    this.peerHeights = new java.util.concurrent.atomic.AtomicLongArray(vs.size());
+    for (int i = 0; i < vs.size(); i++) {
+      lastHeard.set(i, -1);
+      peerHeights.set(i, -1);
+    }
     this.loop =
         Executors.newSingleThreadScheduledExecutor(
             r -> Thread.ofPlatform().name("consensus").daemon(true).unstarted(r));
@@ -143,6 +154,7 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
 
   /** Delivers a message from the network (any thread). */
   public void onNetworkMessage(int from, byte[] msg) {
+    heard(from);
     run(() -> bft.onMessage(from, msg));
   }
 
@@ -188,6 +200,9 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
 
   /** A peer's height from heartbeats (any thread): sync if it is ahead. */
   public void onPeerHeight(int peer, long peerHeight) {
+    if (heard(peer)) {
+      peerHeights.accumulateAndGet(peer, peerHeight, Math::max);
+    }
     run(() -> bft.onPeerHeight(peer, peerHeight));
   }
 
@@ -224,6 +239,29 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
 
   public long height() {
     return height;
+  }
+
+  /** The committed head (any thread). */
+  public ChainHead head() {
+    return published;
+  }
+
+  /** Wall-clock millis when validator {@code i} was last heard from, or {@code -1} (any thread). */
+  public long lastHeardMillis(int i) {
+    return lastHeard.get(i);
+  }
+
+  /** Highest height validator {@code i} reported in a heartbeat, or {@code -1} (any thread). */
+  public long reportedHeight(int i) {
+    return peerHeights.get(i);
+  }
+
+  private boolean heard(int from) {
+    if (from < 0 || from >= vs.size() || from == cfg.me()) {
+      return false;
+    }
+    lastHeard.set(from, System.currentTimeMillis());
+    return true;
   }
 
   /** Hash of the latest committed block (the genesis anchor at height 0). */
@@ -495,6 +533,7 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
       height = cb.height();
       head = cb.block().hash();
       headTimestamp = cb.block().header().timestampMillis();
+      published = new ChainHead(height, head, cb.block().header().stateRoot());
       lastDecidedAt = System.currentTimeMillis();
       validated.clear();
       if (height % cfg.snapshotEvery() == 0) {

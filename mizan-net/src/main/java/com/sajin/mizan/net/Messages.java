@@ -6,6 +6,7 @@ import com.sajin.mizan.core.Trade;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 /**
  * Typed payloads of the client protocol (§5.5). Every server message has an {@code encode()}
@@ -30,7 +31,7 @@ public final class Messages {
 
   /** Any server-to-client message. */
   public sealed interface ServerMessage
-      permits Busy, Accepted, Rejected, Final, Status, TradeMsg, Revoke, Err, Snapshot {
+      permits Busy, Accepted, Rejected, Final, Status, TradeMsg, Revoke, Err, Snapshot, ChainInfo {
     byte[] encode();
   }
 
@@ -156,7 +157,45 @@ public final class Messages {
     }
   }
 
+  /**
+   * The node's committed head and what it knows about each validator (M9-T6). {@code ageMillis} is
+   * the time since the validator was last heard from ({@code 0} for the answering node itself,
+   * {@code -1} if never); {@code height} is its last reported height ({@code -1} if unknown).
+   */
+  @SuppressWarnings("ArrayRecordComponent")
+  public record ChainInfo(
+      long height, byte[] headHash, byte[] stateRoot, List<Validator> validators)
+      implements ServerMessage {
+    public static final int MAX_VALIDATORS = 1_024;
+
+    public record Validator(int index, long height, long ageMillis) {}
+
+    public ChainInfo {
+      if (headHash.length != 32 || stateRoot.length != 32) {
+        throw new IllegalArgumentException("hashes must be 32 bytes");
+      }
+      validators = List.copyOf(validators);
+      if (validators.size() > MAX_VALIDATORS) {
+        throw new IllegalArgumentException("too many validators");
+      }
+    }
+
+    @Override
+    public byte[] encode() {
+      ByteBuffer b = ByteBuffer.allocate(8 + 32 + 32 + 2 + validators.size() * 18);
+      b.putLong(height).put(headHash).put(stateRoot).putShort((short) validators.size());
+      for (Validator v : validators) {
+        b.putShort((short) v.index()).putLong(v.height()).putLong(v.ageMillis());
+      }
+      return FrameCodec.encode(FrameCodec.CHAIN_INFO, b.array());
+    }
+  }
+
   // ------------------------------------------------------------------ client requests
+
+  public static byte[] chainInfoRequest() {
+    return FrameCodec.encode(FrameCodec.CHAIN_INFO_REQ, new byte[0]);
+  }
 
   public static byte[] order(byte[] envelope) {
     return FrameCodec.encode(FrameCodec.ORDER, envelope);
@@ -238,6 +277,24 @@ public final class Messages {
               byte[] p = new byte[b.remaining()];
               b.get(p);
               yield new Snapshot(p);
+            }
+            case FrameCodec.CHAIN_INFO -> {
+              long height = b.getLong();
+              byte[] head = new byte[32];
+              b.get(head);
+              byte[] root = new byte[32];
+              b.get(root);
+              int n = Short.toUnsignedInt(b.getShort());
+              if (n > ChainInfo.MAX_VALIDATORS) {
+                throw new ProtocolException("too many validators: " + n);
+              }
+              List<ChainInfo.Validator> vs = new java.util.ArrayList<>(n);
+              for (int i = 0; i < n; i++) {
+                vs.add(
+                    new ChainInfo.Validator(
+                        Short.toUnsignedInt(b.getShort()), b.getLong(), b.getLong()));
+              }
+              yield new ChainInfo(height, head, root, vs);
             }
             default -> throw new ProtocolException("unknown server message type " + f.type());
           };

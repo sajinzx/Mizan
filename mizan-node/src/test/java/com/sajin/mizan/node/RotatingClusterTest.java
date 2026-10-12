@@ -131,6 +131,21 @@ class RotatingClusterTest {
         Thread.sleep(100);
       }
       assertThat(common).isPositive();
+
+      // M9-T6 chain panel data: every validator is seen live, heights and roots agree.
+      Messages.ChainInfo info =
+          new com.sajin.mizan.net.ChainInfoFetcher(
+                  new java.net.InetSocketAddress(
+                      java.net.InetAddress.getLoopbackAddress(), nodes.get(0).gatewayPort()))
+              .fetch();
+      assertThat(info.height()).isGreaterThanOrEqualTo(common);
+      assertThat(info.validators()).hasSize(4);
+      for (Messages.ChainInfo.Validator v : info.validators()) {
+        assertThat(v.ageMillis())
+            .as("validator %d heard recently", v.index())
+            .isBetween(0L, 3_000L);
+        assertThat(v.height()).as("validator %d height known", v.index()).isPositive();
+      }
     } finally {
       for (int i = 0; i < 4; i++) {
         nodes.get(i).close();

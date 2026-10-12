@@ -147,7 +147,18 @@ final class BftSetup {
     final BlockStore store;
     final WalSafetyStore safety;
 
-    BftChain(BftDriver driver, TcpNetwork network, BlockStore store, WalSafetyStore safety) {
+    final int me;
+    final int n;
+
+    BftChain(
+        BftDriver driver,
+        TcpNetwork network,
+        BlockStore store,
+        WalSafetyStore safety,
+        int me,
+        int n) {
+      this.me = me;
+      this.n = n;
       this.driver = driver;
       this.network = network;
       this.store = store;
@@ -172,6 +183,11 @@ final class BftSetup {
     @Override
     public long height() {
       return driver.height();
+    }
+
+    @Override
+    public com.sajin.mizan.net.Messages.ChainInfo chainInfo() {
+      return ChainInfos.bft(driver, me, n);
     }
 
     @Override
@@ -228,6 +244,6 @@ final class BftSetup {
             snaps,
             finality);
     ref[0] = driver;
-    return new BftChain(driver, net, store, safety);
+    return new BftChain(driver, net, store, safety, me, g.validators().size());
   }
 }
