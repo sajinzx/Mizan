@@ -66,6 +66,7 @@ public final class TcpNetwork implements Network, AutoCloseable {
   }
 
   private final PeerAuth auth;
+  private volatile java.util.function.IntPredicate blocked = peer -> false;
   private final SecureRandom random = new SecureRandom();
 
   private final int me;
@@ -88,6 +89,14 @@ public final class TcpNetwork implements Network, AutoCloseable {
     }
   }
 
+  /**
+   * Fault injection for chaos tests (M9-T7): messages to and from peers matching {@code blocked}
+   * are silently dropped, as in a network partition. Never set in production.
+   */
+  public void setBlocked(java.util.function.IntPredicate blocked) {
+    this.blocked = blocked;
+  }
+
   public void start() throws IOException {
     server = new ServerSocket();
     server.setReuseAddress(true);
@@ -104,7 +113,7 @@ public final class TcpNetwork implements Network, AutoCloseable {
 
   @Override
   public void send(int to, byte[] message) {
-    if (to == me || to < 0 || to >= peers.size()) {
+    if (to == me || to < 0 || to >= peers.size() || blocked.test(to)) {
       return;
     }
     byte[] frame =
@@ -267,7 +276,9 @@ public final class TcpNetwork implements Network, AutoCloseable {
         }
         byte[] msg = new byte[b.remaining()];
         b.get(msg);
-        inbox.accept(from, msg);
+        if (!blocked.test(from)) {
+          inbox.accept(from, msg);
+        }
       }
     } catch (IOException e) {
       // peer went away; it reconnects

@@ -198,6 +198,11 @@ public final class ValidatorNode implements AutoCloseable {
     };
   }
 
+  /** Peer transport (chaos tests inject partitions through it). */
+  TcpNetwork network() {
+    return network;
+  }
+
   public NodeMetrics metrics() {
     return metrics;
   }

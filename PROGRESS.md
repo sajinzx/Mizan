@@ -142,6 +142,19 @@ Note: M2 landed as one commit ("Milestone 2 completed") rather than one commit p
   - `mizan faucet` optionally registers the account, then deposits with the admin key, and waits for FINAL.
   - Test `ToolsTest`: a real chain verifies; a torn tail is reported but not truncated; a different genesis, a lying snapshot and mid-log corruption each fail; keygen refuses to overwrite; faucet funds 6,000 and a non-admin key cannot mint.
 
+- [x] M9-T7 Chaos run (`./gradlew :mizan-node:chaosTest -Pminutes=30`; also nightly):
+  - Setup: four rotating-proposer validators in their own JVMs (`ChaosChild`) under load from 8 traders, who fail over between gateways and retry with the same nonce.
+  - A chaos loop picks one action at a time, holds it for 2–10 s, heals, and pauses 1–5 s. The actions: kill -9 (`destroyForcibly`) and restart from the data dir; a 2|2 partition; isolating one validator.
+  - Partitions drop traffic through a `TcpNetwork.setBlocked` hook, driven by a control file that only the test child reads.
+  - After the final heal it checks: convergence; `verify-chain` (`ChainVerifier`) on every data directory; identical block hash and state root across all four at every common height; every client FINAL against the chain; conservation for every asset.
+
+**Gate M9 (2026-10-12): passed.**
+- 30 minutes with 91 kills, 55 2|2 partitions and 44 isolations.
+- 23,808 client attempts, 481 failovers, 23,327 client FINALs, all equal to the chain.
+- 10 orders unresolved: retries gave up after 8 attempts, typically while a partition was holding. They are not counted as FINALs, and no wrong answer was seen.
+- Up to 39 heights of lag between validators during the chaos. All converged at ≥ 5,983 after the heal.
+- `verify-chain` OK on all 4 data dirs (8 snapshots checked). Identical hash and root at all 5,985 common heights; 23,369 commands; conservation holds.
+
 ## M10
 See spec §8.
 

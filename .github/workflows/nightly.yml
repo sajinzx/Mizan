@@ -20,6 +20,8 @@ jobs:
             task: simSweep -Pseeds=1000
           - name: recovery
             task: recoveryTest -Piter=200
+          - name: chaos
+            task: chaosTest -Pminutes=30
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     timeout-minutes: 240

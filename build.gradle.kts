@@ -17,7 +17,7 @@ plugins {
 val agronaJvmArgs = listOf("--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED")
 
 /** Tags excluded from the default `test` task (spec §3.1). */
-val longRunningTags = arrayOf("slow", "recovery", "sim")
+val longRunningTags = arrayOf("slow", "recovery", "sim", "chaos")
 
 subprojects {
     apply(plugin = "java-library")
@@ -65,6 +65,7 @@ subprojects {
     val seeds = providers.gradleProperty("seeds").orElse("100")
     val tries = providers.gradleProperty("jqwik.tries")
     val fuzzCases = providers.gradleProperty("fuzzCases")
+    val minutes = providers.gradleProperty("minutes").orElse("2")
 
     tasks.withType<Test>().configureEach {
         maxHeapSize = "1g"
@@ -73,6 +74,7 @@ subprojects {
         systemProperty("mizan.gradleTask", path) // for seed replay hints
         systemProperty("mizan.iter", iter.get())
         systemProperty("mizan.seeds", seeds.get())
+        systemProperty("mizan.minutes", minutes.get())
         if (seed.isPresent) systemProperty("mizan.seed", seed.get())
         if (tries.isPresent) systemProperty("jqwik.tries.default", tries.get())
         if (fuzzCases.isPresent) systemProperty("mizan.fuzz.cases", fuzzCases.get())
@@ -102,12 +104,16 @@ subprojects {
         }
 
     registerTaggedTest("nightly", "Property tests at -Pjqwik.tries (default 100000), including tag 'slow'.") {
-        useJUnitPlatform { excludeTags("recovery", "sim") }
+        useJUnitPlatform { excludeTags("recovery", "sim", "chaos") }
         if (!tries.isPresent) systemProperty("jqwik.tries.default", "100000")
         if (!fuzzCases.isPresent) systemProperty("mizan.fuzz.cases", "1000000")
     }
     registerTaggedTest("recoveryTest", "Child-JVM kill/restart tests (tag 'recovery'); -Piter=N.") {
         useJUnitPlatform { includeTags("recovery") }
+    }
+    registerTaggedTest("chaosTest", "4 validator JVMs: kills, partitions, load (tag 'chaos'); -Pminutes=N.") {
+        useJUnitPlatform { includeTags("chaos") }
+        maxHeapSize = "2g"
     }
     registerTaggedTest("simSweep", "Seeded consensus fault sweeps (tag 'sim'); -Pseeds=N.") {
         useJUnitPlatform { includeTags("sim") }
