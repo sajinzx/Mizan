@@ -239,8 +239,8 @@ class SequencerTest {
     h.events.drain();
 
     List<SignedCommand> toReplay = new ArrayList<>(h.drafts.get(1).commands());
-    toReplay.add(order(2, 4, Side.SELL, 110));
-    h.seq.control(new Sequencer.Rollback(committed.copy(), toReplay));
+    toReplay.add(order(2, 4, Side.SELL, 110)); // what the sequencer itself must re-execute
+    h.seq.control(new Sequencer.Rollback(committed.copy(), List.of()));
     h.drain();
 
     assertThat(h.events.events())
@@ -249,6 +249,10 @@ class SequencerTest {
     ExecutionCore expected = committed.copy();
     toReplay.forEach(c -> expected.execute(c, ExecutionCore.SILENT));
     assertThat(h.seq.speculative().stateRoot()).isEqualTo(expected.stateRoot());
+    assertThat(h.seq.epoch()).isEqualTo(1);
+    h.now.addAndGet(10 * MS);
+    h.drain();
+    assertThat(h.drafts.get(h.drafts.size() - 1).epoch()).isEqualTo(1);
   }
 
   // ------------------------------------------------------------------ concurrency

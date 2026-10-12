@@ -37,9 +37,13 @@ import org.agrona.concurrent.ManyToOneConcurrentArrayQueue;
  */
 public final class Sequencer implements CommandSink {
 
-  /** A cut batch waiting for consensus. {@code stateRoot} is the speculative root after it. */
+  /**
+   * A cut batch waiting for consensus. {@code stateRoot} is the speculative root after it. {@code
+   * epoch} counts rollbacks: drafts from an earlier epoch are stale and must be ignored.
+   */
   @SuppressWarnings("ArrayRecordComponent")
-  public record BlockDraft(long firstTradeSeq, List<SignedCommand> commands, byte[] stateRoot) {
+  public record BlockDraft(
+      long epoch, long firstTradeSeq, List<SignedCommand> commands, byte[] stateRoot) {
     public BlockDraft {
       commands = List.copyOf(commands);
     }
@@ -53,7 +57,9 @@ public final class Sequencer implements CommandSink {
 
   /**
    * In-flight drafts were not committed: restart from {@code freshCopy} (a copy of the committed
-   * core, owned by the sequencer from now on) and re-execute {@code toReplay}.
+   * core, owned by the sequencer from now on) and re-execute, in order, the commands of every
+   * in-flight draft, then {@code pending}, then {@code toReplay} (extra commands, e.g. from a
+   * mempool). Nothing that was accepted provisionally is dropped.
    */
   public record Rollback(ExecutionCore freshCopy, List<SignedCommand> toReplay) implements Control {
     public Rollback {
@@ -102,6 +108,7 @@ public final class Sequencer implements CommandSink {
   private final ArrayDeque<BlockDraft> inflight = new ArrayDeque<>();
   private final ArrayDeque<SignedCommand> replay = new ArrayDeque<>();
   private long executed;
+  private long epoch;
 
   private volatile boolean running;
   private Thread thread;
@@ -222,7 +229,8 @@ public final class Sequencer implements CommandSink {
     if (!full && !due) {
       return false;
     }
-    BlockDraft draft = new BlockDraft(pendingFirstTradeSeq, pending, speculative.stateRoot());
+    BlockDraft draft =
+        new BlockDraft(epoch, pendingFirstTradeSeq, pending, speculative.stateRoot());
     pending.clear();
     inflight.addLast(draft);
     drafts.accept(draft);
@@ -241,10 +249,16 @@ public final class Sequencer implements CommandSink {
             inflight.isEmpty() ? pendingFirstTradeSeq : inflight.peekFirst().firstTradeSeq();
         listener.onRevoke(from); // defect 6
         speculative = r.freshCopy();
+        ArrayDeque<SignedCommand> again = new ArrayDeque<>();
+        inflight.forEach(d -> again.addAll(d.commands()));
+        again.addAll(pending);
+        again.addAll(replay); // a previous rollback's replay not yet finished
+        again.addAll(r.toReplay());
         inflight.clear();
         pending.clear();
         replay.clear();
-        replay.addAll(r.toReplay()); // re-executed by doWork, under the same batch bound
+        replay.addAll(again); // re-executed by doWork, under the same batch bound
+        epoch++;
         pendingFirstTradeSeq = speculative.nextTradeSeq();
       }
     }
@@ -259,6 +273,10 @@ public final class Sequencer implements CommandSink {
 
   int inflightSize() {
     return inflight.size();
+  }
+
+  long epoch() {
+    return epoch;
   }
 
   long executedCount() {
