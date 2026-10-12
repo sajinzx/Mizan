@@ -62,7 +62,7 @@ Note: M2 landed as one commit ("Milestone 2 completed") rather than one commit p
 - [x] Slow-loris safe (HardeningTest: trickling and half-frame clients cut off; server keeps serving).
 - [x] Backpressure: a 5,000-command pre-signed burst ⇒ 4,798 BUSY, all answered, max latency 0.48 s, no OOM (gateway pre-check off so the engine's verification is the bottleneck).
 - [x] 100 traders × 1,000 orders: 100,000 accepted, 0 errors, conservation holds, `sim-traders` active after join = 0 (807 orders/s; ack p50 114 ms, p99 273 ms on the M3 laptop; Ed25519 verification is the bottleneck).
-- [x] 10-minute soak: threads 4 before / 4 after. **First run failed honestly**: heap after GC rose 10 → 137 MiB because bounded caches (signature cache 2^18, result cache 1M) were still filling and GTC orders kept growing the book; also found and fixed a small leak (empty per-account connection sets). Rerun with IOC-only orders and a 50k result cache: heap rose to 60 MiB while caches filled, then stayed flat at 59–61 MiB for the last 4 minutes. The assertion is now "flat in the last third" (< 8 MiB growth); __SOAK_RESULT__
+- [x] 10-minute soak: threads 4 before / 4 after. **First run failed honestly**: heap after GC rose 10 → 137 MiB because bounded caches (signature cache 2^18, result cache 1M) were still filling and GTC orders kept growing the book; also found and fixed a small leak (empty per-account connection sets). Rerun with IOC-only orders and a 50k result cache: heap rose to 60 MiB while caches filled, then stayed flat at 59–61 MiB for the last 4 minutes. The assertion is now "flat in the last third" (< 8 MiB growth); rerun result: 600 s, 99 rounds, 396,000 orders, heap after GC 10 → 60 MiB while filling, then 60–61 MiB for the last 7 samples, threads 4/4, **passed**.
 
 ## M5
 - [x] M5-T1 Market event queue: `MarketDataService` is an `EngineListener` offering to an Agrona SPSC queue (overflow counted, never blocks).
@@ -104,7 +104,19 @@ Note: M2 landed as one commit ("Milestone 2 completed") rather than one commit p
 
 **Gate M7 (2026-10-12): passed.** `./gradlew :mizan-sim:simSweep -Pseeds=1000`: 1,000 seeds × 5 scenarios, all passed: no conflicting commits, and every honest validator advanced ≥ 5 heights after the last fault healed. Message counts: HAPPY 0.98M, CRASH 7.4M, BYZANTINE 2.9M, LOSS 1.7M, RESTARTS 7.2M; 79,039 Byzantine equivocations logged. **An earlier run passed vacuously** (targets were reached before faults fired). That was caught by identical HAPPY/CRASH message counts, and fixed with block pacing and a "progress after heal" stop condition before the run above. TCP smoke test passes.
 
-## M8–M10
+## M8
+- [x] M8-T1 Fault matrix in the simulator with a rotating proposer: PROPOSER_CRASH (crash at 0–12 ms after round start), PARTITION_2_2, LATE_JOINER, LOSS, BYZANTINE.
+- [x] M8-T2 Forwarding: gateway commands go to a `CommandPool` and are gossiped (`TX`) to all validators, re-gossiped until committed; de-duplicated by `(account, nonce)` (ADR 0015).
+- [x] M8-T3 Rotating proposer `(h + r) mod n`; optimistic execution only on the proposer at proposal time; `REVOKE` when its proposal loses.
+- [x] M8-T4 Bulk sync: `SYNC_REQ`/`SYNC_RESP` (≤ 64 blocks), certificate + sync-mode replay checks, 60 s ban for peers serving invalid blocks.
+- [x] M8-T5 UDP heartbeats `{node, height, head}` every 500 ms; advisory only. Test: heights propagate under 50% loss.
+- [x] M8-T6 `ValidatorNode` + `mizan cluster` (rotating by default, `--fixed-proposer` keeps the M7 path).
+- [x] M8-T7 `RotatingClusterTest`: 4 validators over TCP, 8 traders spread over all gateways, validator 1 killed mid-run (clients fail over and retry with the same nonces), restarted, catches up by sync.
+- Fix found on the way: shutdown could interrupt an fsync so the recovered height exceeded the reported one; `ChainDriver` now drains with a poison pill and `BftDriver` closes via a flag.
+
+**Gate M8 (2026-10-12): passed.** `./gradlew :mizan-sim:simSweep -Pseeds=1000` on the final code: fault matrix 1,000 seeds × {PROPOSER_CRASH, PARTITION_2_2, LATE_JOINER, LOSS, BYZANTINE}, all passed; proposer-crash delays covered {0, 1, 2, 3, 5, 8, 12} ms (123–160 runs each); late joiners synced 9,560 blocks in total. The M7 sweep rerun in the same build also passed (1,000 × 5; 88,138 equivocations logged; message counts differ from the M7 run because block pacing changed). `RotatingClusterTest`: 160 client FINALs, each equal to the chain's (height, order id); all 4 replicas have the same head at the common height.
+
+## M9–M10
 See spec §8.
 
 ## Known issues / deferred

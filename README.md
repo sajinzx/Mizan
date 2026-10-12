@@ -38,6 +38,7 @@ Randomized tests print `SEED=<n>` and a replay command on failure. Re-run with `
   - [0012 Market data](docs/adr/0012-market-data.md)
   - [0013 Persistence and recovery](docs/adr/0013-persistence-and-recovery.md)
   - [0014 BFT implementation](docs/adr/0014-bft-implementation.md)
+  - [0015 Rotation, forwarding, sync](docs/adr/0015-rotation-forwarding-sync.md)
 
 ## Modules
 
