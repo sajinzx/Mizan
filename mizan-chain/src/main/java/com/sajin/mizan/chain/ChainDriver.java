@@ -110,6 +110,9 @@ public final class ChainDriver implements Consumer<Sequencer.BlockDraft>, AutoCl
     try {
       while (running) {
         Sequencer.BlockDraft d = drafts.take();
+        if (d.epoch() < 0) { // STOP
+          return;
+        }
         if (d.epoch() < epoch) {
           continue; // cut before the last rollback; its commands are being replayed
         }
@@ -175,10 +178,14 @@ public final class ChainDriver implements Consumer<Sequencer.BlockDraft>, AutoCl
     }
   }
 
+  /** Poison pill: lets an in-flight commit (append + fsync) finish before the thread exits. */
+  private static final Sequencer.BlockDraft STOP =
+      new Sequencer.BlockDraft(-1, 0, List.of(), new byte[32]);
+
   @Override
   public void close() {
     running = false;
-    thread.interrupt();
+    drafts.add(STOP);
     try {
       thread.join(5_000);
     } catch (InterruptedException e) {
