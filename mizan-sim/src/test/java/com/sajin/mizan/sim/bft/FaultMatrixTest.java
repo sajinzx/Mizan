@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.sajin.mizan.chain.bft.SafetyStore;
 import com.sajin.mizan.testkit.Seed;
 import com.sajin.mizan.testkit.SeedExtension;
+import com.sajin.mizan.testkit.StructuredMutator;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -32,7 +33,9 @@ class FaultMatrixTest {
     /** 10–30% loss, 5% duplication, 5–50 ms jitter (reordering), then heal. */
     LOSS,
     /** Validator 3 double-votes for the whole run. */
-    BYZANTINE
+    BYZANTINE,
+    /** 20% of messages get a structurally mutated extra copy (M9-T5), then heal. */
+    MANGLE
   }
 
   record Result(
@@ -42,7 +45,8 @@ class FaultMatrixTest {
       long minHeight,
       long required,
       long synced,
-      int phase) {
+      int phase,
+      long mangled) {
     boolean ok() {
       return conflict == null && minHeight >= required;
     }
@@ -100,6 +104,22 @@ class FaultMatrixTest {
         c.makeByzantine(3);
         faultEnd = 5_000;
       }
+      case MANGLE -> {
+        StructuredMutator mut = new StructuredMutator(new SplittableRandom(seed ^ 0x5EED));
+        List<byte[]> recent = new ArrayList<>();
+        net.setMangler(
+            0.20,
+            m -> {
+              if (recent.size() < 64) {
+                recent.add(m);
+              } else {
+                recent.set(rnd.nextInt(64), m);
+              }
+              return mut.mutate(m, recent);
+            });
+        world.at(ConsensusSweep.NOISE_MS, () -> net.setMangler(0, null));
+        faultEnd = ConsensusSweep.NOISE_MS;
+      }
       default -> throw new IllegalStateException();
     }
     long[] heightAtHeal = {-1};
@@ -114,7 +134,14 @@ class FaultMatrixTest {
                         >= heightAtHeal[0] + ConsensusSweep.PROGRESS_AFTER_HEAL));
     long required = Math.max(1, heightAtHeal[0] + ConsensusSweep.PROGRESS_AFTER_HEAL);
     return new Result(
-        fault, seed, c.conflict(), c.minHonestHeight(), required, c.syncedBlocks(), phase[0]);
+        fault,
+        seed,
+        c.conflict(),
+        c.minHonestHeight(),
+        required,
+        c.syncedBlocks(),
+        phase[0],
+        net.mangled());
   }
 
   @Test
@@ -147,6 +174,7 @@ class FaultMatrixTest {
     Map<Fault, Integer> passed = new EnumMap<>(Fault.class);
     Map<Integer, Integer> crashPhases = new java.util.TreeMap<>();
     long synced = 0;
+    long mangled = 0;
     List<String> failures = new ArrayList<>();
     for (long s = 1; s <= seeds; s++) {
       for (Fault f : Fault.values()) {
@@ -171,12 +199,13 @@ class FaultMatrixTest {
         if (f == Fault.LATE_JOINER) {
           synced += r.synced();
         }
+        mangled += r.mangled();
       }
     }
     System.out.printf(
         "fault matrix (rotating proposer): %d seeds; passed %s; proposer-crash delay after round start (ms) -> runs %s; "
-            + "late-joiner blocks synced %d%n",
-        seeds, passed, crashPhases, synced);
+            + "late-joiner blocks synced %d; mangled messages injected %d%n",
+        seeds, passed, crashPhases, synced, mangled);
     failures.stream().limit(20).forEach(System.out::println);
     assertThat(failures).isEmpty();
   }

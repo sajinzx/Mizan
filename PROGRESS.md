@@ -125,6 +125,11 @@ Note: M2 landed as one commit ("Milestone 2 completed") rather than one commit p
 
   Also added: `SecurityRulesTest` (ArchUnit over all production classes: no Java serialization, no reflection or process execution), Dependabot plus dependency-graph submission, and planted regressions "peer auth" and "md subscriber cap" (both detected). A 200-seed sweep of both matrices passes with the sync rate limit.
 - [x] M9-T3 (part 2) `docs/runbook.md`: start modes, keys and faucet, data-directory files (what is never safe to delete), health checks via metrics and logs, and procedures (restart, verify, corruption, wrong genesis, root mismatch, validator down, evidence, backups).
+- [x] M9-T5 Structure-aware fuzzing:
+  - `testkit.StructuredMutator` overwrites integer fields with boundary values (lengths, counts, heights, rounds, indexes), truncates, extends, splices two valid messages, and duplicates or deletes ranges. It stacks one to three operations.
+  - `StructuredFuzzTest` uses a corpus of all six consensus message types plus blocks and committed blocks. Oracles: decoders throw only `ProtocolException`; everything that decodes is canonical (re-encoding returns the input bytes); block validation never throws; a live `RoundBft` fed mutated bytes, plus validly signed votes and proposals with extreme heights and rounds, never throws and never moves its height backwards.
+  - New sim fault `MANGLE`: 20% of messages get a mutated extra copy on the wire.
+  - Results (`-PfuzzCases=1000000`, the nightly default): 1M message cases (311,400 still decodable, all canonical); 250k block cases (39,378 validated); 166,666 hostile inputs to a live `RoundBft`. No failures, so no bugs were found by fuzzing. Fault matrix with `MANGLE`: 1,000 seeds × 6 faults all passed, with 572,025 mangled messages injected; the M7 sweep was rerun too (1,000 × 5 passed).
 - [x] M9-T4 Tools:
   - `mizan verify-chain --data --genesis` is read-only (`BlockStore.openReadOnly`, `SnapshotStore.readAllValid`). `ChainVerifier` replays from genesis with the same per-block checks as recovery (extracted into `Recovery.readLinked`/`applyCertified`): links, txRoot, certificates and state roots. It also checks every snapshot against the replayed chain.
   - `mizan keygen --out` never overwrites a file.

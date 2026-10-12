@@ -64,6 +64,7 @@ subprojects {
     val iter = providers.gradleProperty("iter").orElse("20")
     val seeds = providers.gradleProperty("seeds").orElse("100")
     val tries = providers.gradleProperty("jqwik.tries")
+    val fuzzCases = providers.gradleProperty("fuzzCases")
 
     tasks.withType<Test>().configureEach {
         maxHeapSize = "1g"
@@ -74,6 +75,7 @@ subprojects {
         systemProperty("mizan.seeds", seeds.get())
         if (seed.isPresent) systemProperty("mizan.seed", seed.get())
         if (tries.isPresent) systemProperty("jqwik.tries.default", tries.get())
+        if (fuzzCases.isPresent) systemProperty("mizan.fuzz.cases", fuzzCases.get())
         testLogging {
             events("failed")
             exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
@@ -102,6 +104,7 @@ subprojects {
     registerTaggedTest("nightly", "Property tests at -Pjqwik.tries (default 100000), including tag 'slow'.") {
         useJUnitPlatform { excludeTags("recovery", "sim") }
         if (!tries.isPresent) systemProperty("jqwik.tries.default", "100000")
+        if (!fuzzCases.isPresent) systemProperty("mizan.fuzz.cases", "1000000")
     }
     registerTaggedTest("recoveryTest", "Child-JVM kill/restart tests (tag 'recovery'); -Piter=N.") {
         useJUnitPlatform { includeTags("recovery") }

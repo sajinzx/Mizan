@@ -27,6 +27,9 @@ public final class SimNetwork {
   private int maxDelay = 5;
   private long sent;
   private long dropped;
+  private double mangle;
+  private java.util.function.UnaryOperator<byte[]> mangler;
+  private long mangled;
 
   public SimNetwork(SimWorld world, int n) {
     this.world = world;
@@ -79,6 +82,19 @@ public final class SimNetwork {
     return dropped;
   }
 
+  /**
+   * With probability {@code p}, also delivers a {@code mangler}-mutated copy of each message
+   * (M9-T5: hostile bytes on the wire next to the genuine traffic). {@code p = 0} turns it off.
+   */
+  public void setMangler(double p, java.util.function.UnaryOperator<byte[]> mangler) {
+    this.mangle = p;
+    this.mangler = mangler;
+  }
+
+  public long mangled() {
+    return mangled;
+  }
+
   /** The endpoint of validator {@code me}. */
   public Network endpoint(int me) {
     return new Network() {
@@ -109,16 +125,24 @@ public final class SimNetwork {
     }
     int copies = world.random().nextDouble() < duplicate ? 2 : 1;
     for (int i = 0; i < copies; i++) {
-      long delay = (long) minDelay + world.random().nextInt(maxDelay - minDelay + 1);
-      world.atNode(
-          to,
-          world.now() + delay,
-          () -> {
-            BiConsumer<Integer, byte[]> h = handlers.get(to);
-            if (h != null) {
-              h.accept(from, message);
-            }
-          });
+      schedule(from, to, message);
     }
+    if (mangle > 0 && world.random().nextDouble() < mangle) {
+      mangled++;
+      schedule(from, to, mangler.apply(message));
+    }
+  }
+
+  private void schedule(int from, int to, byte[] message) {
+    long delay = (long) minDelay + world.random().nextInt(maxDelay - minDelay + 1);
+    world.atNode(
+        to,
+        world.now() + delay,
+        () -> {
+          BiConsumer<Integer, byte[]> h = handlers.get(to);
+          if (h != null) {
+            h.accept(from, message);
+          }
+        });
   }
 }
