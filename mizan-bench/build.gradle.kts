@@ -23,4 +23,13 @@ jmh {
     resultsFile.set(layout.buildDirectory.file("results/jmh/results.json"))
     humanOutputFile.set(layout.buildDirectory.file("results/jmh/human.txt"))
     providers.gradleProperty("jmh.includes").orNull?.let { includes.add(it) }
+    // -Pjmh.jvmArgs="-XX:+UseZGC -XX:+ZGenerational" (M10-T3 GC comparison); space-separated.
+    providers.gradleProperty("jmh.jvmArgs").orNull?.let { jvmArgsAppend.addAll(it.split(" ").filter(String::isNotBlank)) }
+    // -Pjmh.profilers=gc adds JMH's allocation profiler (M10-T5).
+    providers.gradleProperty("jmh.profilers").orNull?.let { profilers.addAll(it.split(",")) }
+    // -Pjmh.results=<name> keeps each run's output separately.
+    providers.gradleProperty("jmh.results").orNull?.let {
+        resultsFile.set(layout.buildDirectory.file("results/jmh/$it.json"))
+        humanOutputFile.set(layout.buildDirectory.file("results/jmh/$it.txt"))
+    }
 }

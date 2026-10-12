@@ -20,8 +20,10 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.infra.Blackhole;
 
 /**
- * {@code OrderBook} operations by depth: {@code depth} price levels per side, {@value
- * #ORDERS_PER_LEVEL} resting orders per level. The book stays in a steady state:
+ * {@code OrderBook} operations by depth: {@code depth} price levels per side, {@code perLevel}
+ * resting orders per level (4 as in the M3 baseline; 64 for a deep FIFO queue, where cancelling the
+ * newest order scans the whole queue unless the level supports O(1) removal, M10-T1). The book
+ * stays in a steady state:
  *
  * <ul>
  *   <li>{@code addCancel}: rest one bid at a level spread across the book, then cancel it;
@@ -32,13 +34,15 @@ import org.openjdk.jmh.infra.Blackhole;
 @State(Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 public class BookBench {
-  static final int ORDERS_PER_LEVEL = 4;
   static final long MID = 1_000_000;
   static final long TRADER = 7;
   static final long TAKER = 8;
 
   @Param({"10", "100", "1000"})
   public int depth;
+
+  @Param({"4", "64"})
+  public int perLevel;
 
   private OrderBook book;
   private long nextId;
@@ -50,7 +54,7 @@ public class BookBench {
     book = new OrderBook(1);
     nextId = 1;
     for (int lvl = 0; lvl < depth; lvl++) {
-      for (int k = 0; k < ORDERS_PER_LEVEL; k++) {
+      for (int k = 0; k < perLevel; k++) {
         book.rest(
             new LimitOrder(nextId++, TRADER, 1, Side.BUY, TimeInForce.GTC, MID - 1 - lvl, 10));
         book.rest(
