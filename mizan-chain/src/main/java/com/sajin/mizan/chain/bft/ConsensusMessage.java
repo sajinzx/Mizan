@@ -8,6 +8,7 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -17,6 +18,9 @@ import java.util.Objects;
  * PROPOSAL [1][height:8][round:4][validRound:4][proposer:4][sig:64][blockLen:4][block]
  * VOTE     [2][type:1][height:8][round:4][hasHash:1][hash:32?][validator:4][sig:64]
  * COMMIT   [3][from:4][committedLen:4][committed block]   (catch-up for lagging validators)
+ * TX       [4][from:4][envelopeLen:4][signed command]     (command gossip, M8)
+ * SYNC_REQ [5][from:4][fromHeight:8][max:4]               (bulk block sync, M8)
+ * SYNC_RESP[6][from:4][count:4]([len:4][committed block])*
  * </pre>
  *
  * Proposal signatures cover {@code "CBPROP1" || chainId || height || round || validRound ||
@@ -27,6 +31,10 @@ public sealed interface ConsensusMessage {
   int TAG_PROPOSAL = 1;
   int TAG_VOTE = 2;
   int TAG_COMMIT = 3;
+  int TAG_TX = 4;
+  int TAG_SYNC_REQ = 5;
+  int TAG_SYNC_RESP = 6;
+  int MAX_SYNC_BLOCKS = 64;
 
   /** A proposal for {@code (height, round)}. Arrays are not copied. */
   @SuppressWarnings("ArrayRecordComponent")
@@ -78,6 +86,20 @@ public sealed interface ConsensusMessage {
   /** A decided block and its certificate, sent to help a lagging validator catch up. */
   record Commit(int from, CommittedBlock committed) implements ConsensusMessage {}
 
+  /** A client command gossiped between validators; authenticated by its own signature. */
+  @SuppressWarnings("ArrayRecordComponent")
+  record Tx(int from, byte[] envelope) implements ConsensusMessage {}
+
+  /** Asks for up to {@code max} decided blocks starting at {@code fromHeight}. */
+  record SyncRequest(int from, long fromHeight, int max) implements ConsensusMessage {}
+
+  /** Consecutive decided blocks with their certificates. */
+  record SyncResponse(int from, java.util.List<CommittedBlock> blocks) implements ConsensusMessage {
+    public SyncResponse {
+      blocks = java.util.List.copyOf(blocks);
+    }
+  }
+
   static byte[] encode(ConsensusMessage m) {
     return switch (m) {
       case Proposal p -> {
@@ -110,6 +132,33 @@ public sealed interface ConsensusMessage {
             .putInt(cb.length)
             .put(cb)
             .array();
+      }
+      case Tx t ->
+          ByteBuffer.allocate(1 + 4 + 4 + t.envelope().length)
+              .put((byte) TAG_TX)
+              .putInt(t.from())
+              .putInt(t.envelope().length)
+              .put(t.envelope())
+              .array();
+      case SyncRequest r ->
+          ByteBuffer.allocate(1 + 4 + 8 + 4)
+              .put((byte) TAG_SYNC_REQ)
+              .putInt(r.from())
+              .putLong(r.fromHeight())
+              .putInt(r.max())
+              .array();
+      case SyncResponse r -> {
+        List<byte[]> enc = new java.util.ArrayList<>();
+        int size = 1 + 4 + 4;
+        for (CommittedBlock cb : r.blocks()) {
+          byte[] e = cb.encode();
+          enc.add(e);
+          size += 4 + e.length;
+        }
+        ByteBuffer b =
+            ByteBuffer.allocate(size).put((byte) TAG_SYNC_RESP).putInt(r.from()).putInt(enc.size());
+        enc.forEach(e -> b.putInt(e.length).put(e));
+        yield b.array();
       }
     };
   }
@@ -157,6 +206,27 @@ public sealed interface ConsensusMessage {
               byte[] cb = new byte[length(b)];
               b.get(cb);
               yield new Commit(from, CommittedBlock.decode(cb));
+            }
+            case TAG_TX -> {
+              int from = b.getInt();
+              byte[] env = new byte[length(b)];
+              b.get(env);
+              yield new Tx(from, env);
+            }
+            case TAG_SYNC_REQ -> new SyncRequest(b.getInt(), b.getLong(), b.getInt());
+            case TAG_SYNC_RESP -> {
+              int from = b.getInt();
+              int n = b.getInt();
+              if (n < 0 || n > MAX_SYNC_BLOCKS) {
+                throw new ProtocolException("bad sync block count " + n);
+              }
+              List<CommittedBlock> blocks = new java.util.ArrayList<>(n);
+              for (int i = 0; i < n; i++) {
+                byte[] cb = new byte[length(b)];
+                b.get(cb);
+                blocks.add(CommittedBlock.decode(cb));
+              }
+              yield new SyncResponse(from, blocks);
             }
             default -> throw new ProtocolException("unknown consensus message " + tag);
           };

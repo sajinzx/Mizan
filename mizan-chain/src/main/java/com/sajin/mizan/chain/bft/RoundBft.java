@@ -8,6 +8,9 @@ import com.sajin.mizan.chain.ValidatorSet;
 import com.sajin.mizan.chain.Votes;
 import com.sajin.mizan.chain.bft.ConsensusMessage.Commit;
 import com.sajin.mizan.chain.bft.ConsensusMessage.Proposal;
+import com.sajin.mizan.chain.bft.ConsensusMessage.SyncRequest;
+import com.sajin.mizan.chain.bft.ConsensusMessage.SyncResponse;
+import com.sajin.mizan.chain.bft.ConsensusMessage.Tx;
 import com.sajin.mizan.chain.bft.ConsensusMessage.Vote;
 import com.sajin.mizan.core.ProtocolException;
 import com.sajin.mizan.crypto.SignatureVerifier;
@@ -67,6 +70,9 @@ public final class RoundBft {
 
     /** A previously decided block, for catching up a lagging peer; {@code null} if unknown. */
     CommittedBlock committed(long height);
+
+    /** A gossiped client command (M8). Ignored by default. */
+    default void onTx(int from, byte[] envelope) {}
   }
 
   /** Observations for metrics, logs and tests. */
@@ -142,6 +148,9 @@ public final class RoundBft {
   private final List<byte[]> ownMessages = new ArrayList<>();
   private final List<byte[]> nextHeight = new ArrayList<>();
   private final Map<Integer, Long> lastCatchUpReply = new HashMap<>();
+  private final Map<Integer, Long> lastSyncRequest = new HashMap<>();
+  private final Map<Integer, Long> bannedUntil = new HashMap<>();
+  private long syncedBlocks;
   private Scheduler.Cancellable proposeTimer;
   private boolean started;
 
@@ -198,7 +207,85 @@ public final class RoundBft {
       case Proposal p -> onProposal(from, p, bytes);
       case Vote v -> onVote(from, v, bytes);
       case Commit c -> onCommit(c.committed());
+      case Tx t -> cfg.app().onTx(from, t.envelope());
+      case SyncRequest r -> serveSync(from, r);
+      case SyncResponse r -> applySync(from, r);
     }
+  }
+
+  /** A peer reports its height (advisory, e.g. from UDP heartbeats): sync if it is ahead. */
+  public void onPeerHeight(int peer, long peerHeight) {
+    if (peerHeight >= height) {
+      requestSync(peer);
+    }
+  }
+
+  /** Blocks applied through bulk sync so far. */
+  public long syncedBlocks() {
+    return syncedBlocks;
+  }
+
+  private void requestSync(int peer) {
+    if (peer < 0 || peer >= vs.size() || peer == cfg.me()) {
+      return;
+    }
+    long now = cfg.scheduler().nowMillis();
+    Long last = lastSyncRequest.get(peer);
+    if (last != null && now - last < 1_000) {
+      return;
+    }
+    lastSyncRequest.put(peer, now);
+    cfg.network()
+        .send(
+            peer,
+            ConsensusMessage.encode(
+                new SyncRequest(cfg.me(), height, ConsensusMessage.MAX_SYNC_BLOCKS)));
+  }
+
+  private void serveSync(int from, SyncRequest r) {
+    if (from < 0 || from >= vs.size() || r.fromHeight() < 1) {
+      return;
+    }
+    List<CommittedBlock> blocks = new ArrayList<>();
+    long bytes = 0;
+    int max = Math.min(Math.max(r.max(), 1), ConsensusMessage.MAX_SYNC_BLOCKS);
+    for (long h = r.fromHeight(); h < height && blocks.size() < max && bytes < (1 << 20); h++) {
+      CommittedBlock cb = cfg.app().committed(h);
+      if (cb == null) {
+        break;
+      }
+      blocks.add(cb);
+      bytes += cb.encode().length;
+    }
+    if (!blocks.isEmpty()) {
+      cfg.network().send(from, ConsensusMessage.encode(new SyncResponse(cfg.me(), blocks)));
+    }
+  }
+
+  private void applySync(int from, SyncResponse r) {
+    long now = cfg.scheduler().nowMillis();
+    Long banned = bannedUntil.get(from);
+    if (banned != null && now < banned) {
+      return;
+    }
+    for (CommittedBlock cb : r.blocks()) {
+      if (cb.height() < height) {
+        continue;
+      }
+      if (cb.height() > height) {
+        break; // not contiguous with what we have
+      }
+      if (!tryCommit(cb)) {
+        bannedUntil.put(from, now + 60_000); // served an invalid block
+        return;
+      }
+      syncedBlocks++;
+    }
+    if (!r.blocks().isEmpty() && r.blocks().get(r.blocks().size() - 1).height() >= height) {
+      return;
+    }
+    lastSyncRequest.remove(from);
+    requestSync(from); // more may follow
   }
 
   public long height() {
@@ -278,15 +365,20 @@ public final class RoundBft {
   }
 
   private void onCommit(CommittedBlock cb) {
-    if (cb.height() != height) {
-      return;
+    if (cb.height() == height) {
+      tryCommit(cb);
     }
+  }
+
+  /** Validates a decided block in sync mode and applies it. Returns whether it was valid. */
+  private boolean tryCommit(CommittedBlock cb) {
     if (!structurallyValid(cb.block(), false)
         || !vs.verifies(cb.cert(), height, cb.block().hash(), cfg.verifier())
         || !cfg.app().validCommitted(cb)) {
-      return;
+      return false;
     }
     decide(cb);
+    return true;
   }
 
   /** A message for another height: buffer one height ahead; help a peer that is behind. */
@@ -295,6 +387,8 @@ public final class RoundBft {
       if (nextHeight.size() < 4 * vs.size() * 8) {
         nextHeight.add(raw);
       }
+    } else if (h > height + 1) {
+      requestSync(from);
     } else if (h < height && from >= 0 && from < vs.size() && from != cfg.me()) {
       long now = cfg.scheduler().nowMillis();
       Long last = lastCatchUpReply.get(from);
