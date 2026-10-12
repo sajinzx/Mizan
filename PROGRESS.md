@@ -1,5 +1,5 @@
 # Progress
-Current milestone: M4   Last gate passed: M3 (M1 gate passed except the planted-red CI check)
+Current milestone: M8   Last gate passed: M7 (M1: planted-red CI check outstanding; M5: UI needs a human look; M7: protocol review by a second person outstanding)
 Decisions/ADRs: see docs/adr/ (0001–0003 design; 0004 naming, 0005 toolchain versions, 0006 test-scope testkit edges, 0007 core type placement, 0008 engine semantics, 0009 test signer + arch scans)
 
 ## M1
@@ -48,35 +48,66 @@ Note: M2 landed as one commit ("Milestone 2 completed") rather than one commit p
 - [x] M3-T4 JMH harness (`bench`, src/jmh): `ExecuteBench` (throughput + SampleTime; signatures off / Ed25519; deterministic 32,768-command pre-signed workload, all commands accepted, replayed from a copy of the initial state), `BookBench` (addCancel, matchOne; depth 10/100/1000, 4 orders per level). `-Pjmh.quick` runs a 1-fork smoke test; `-Pjmh.includes=<regex>` selects benchmarks.
 - [x] M3-T5 Publish baseline: [`docs/bench/baseline.md`](docs/bench/baseline.md) + raw JMH JSON/log. Ryzen 7 4700U laptop, JDK 21.0.12.1, defaults. execute: 3.40 M/s with signatures off (p50 0.4 µs, p99 1.1 µs, p99.9 26 µs); 1,027/s with Ed25519 (p50 0.8 ms). Book addCancel 17.2 → 7.9 M/s from depth 10 to 1000. No optimization done.
 
-**Gate M3 (2026-10-12): passed.** No lost or duplicated commands under 8 producers × 3,000; BUSY on a full queue (unit + flood test); baseline published with methodology and raw output.
+**Gate M3 (2026-10-12): passed.** No lost or duplicated commands under 8 producers × 3,000; BUSY on a full queue (`SequencerTest.fullInboundQueueReturnsBusyAndSequencerIsUnaffected`); baseline published with methodology and raw output.
 
 ## M4
-- [ ] M4-T1 FrameCodec
-- [ ] M4-T2 TcpGateway
-- [ ] M4-T3 ResultCache + QUERY_STATUS
-- [ ] M4-T4 Hardening
-- [ ] M4-T5 Client + load
+- [x] M4-T1 FrameCodec: `[len:4][type:1][payload]`, `MAX_FRAME` 1 MiB; tests with 1-byte, every-split-point and random chunking; typed `Messages` round-trip.
+- [x] M4-T2 TcpGateway: two virtual threads per connection, bounded ack queue (overflow ⇒ disconnect) and drop-oldest push queue; pre-check injected (`SignaturePreCheck` + shared `CachingVerifier`, ADR 0011); `ExecResult.reasonCode` added.
+- [x] M4-T3 ResultCache + QUERY_STATUS: O(1) LRU per account (1,024) and total (1M); AUTH_FAILED never cached. `GatewayTest.retryAfterLostAckReturnsOriginalResult` (defect 8).
+- [x] M4-T4 Hardening: max connections, idle + per-frame deadline (slow-loris), per-connection/per-account token buckets ⇒ BUSY, disconnect after 3 protocol errors; `docs/threat-model.md` started. Hardening code landed with T2; T4 added the tests.
+- [x] M4-T5 Client + load: `MizanClient`, `LoadGenerator` (`ThreadGroup("sim-traders")`, shared `AtomicLong` ids, HdrHistogram), `mizan node --dev` / `mizan load`.
+
+**Gate M4 (2026-10-12): passed.**
+- [x] Framing at every byte boundary (FrameCodecTest).
+- [x] Slow-loris safe (HardeningTest: trickling and half-frame clients cut off; server keeps serving).
+- [x] Backpressure: a 5,000-command pre-signed burst ⇒ 4,798 BUSY, all answered, max latency 0.48 s, no OOM (gateway pre-check off so the engine's verification is the bottleneck).
+- [x] 100 traders × 1,000 orders: 100,000 accepted, 0 errors, conservation holds, `sim-traders` active after join = 0 (807 orders/s; ack p50 114 ms, p99 273 ms on the M3 laptop; Ed25519 verification is the bottleneck).
+- [x] 10-minute soak: threads 4 before / 4 after. **First run failed honestly**: heap after GC rose 10 → 137 MiB because bounded caches (signature cache 2^18, result cache 1M) were still filling and GTC orders kept growing the book; also found and fixed a small leak (empty per-account connection sets). Rerun with IOC-only orders and a 50k result cache: heap rose to 60 MiB while caches filled, then stayed flat at 59–61 MiB for the last 4 minutes. The assertion is now "flat in the last third" (< 8 MiB growth); __SOAK_RESULT__
 
 ## M5
-- [ ] M5-T1 Market event queue
-- [ ] M5-T2 MarketDataThread + DepthBook
-- [ ] M5-T3 UDP publisher/subscriber
-- [ ] M5-T4 Minimal JavaFX ladder
+- [x] M5-T1 Market event queue: `MarketDataService` is an `EngineListener` offering to an Agrona SPSC queue (overflow counted, never blocks).
+- [x] M5-T2 MarketDataThread + DepthBook: `marketdata` thread owns a `DepthBook` built only from deltas. `MarketDataTest.depthBookEqualsOrderBookDepth`: 100 streams × 150 commands, equal after every command.
+- [x] M5-T3 UDP publisher/subscriber: full-state top-35 DEPTH packets (1,135 bytes), TRADE/REVOKE/HEARTBEAT, unicast subscriptions, TCP SNAPSHOT via the gateway (ADR 0012).
+- [x] M5-T4 Minimal JavaFX ladder: `mizan-ui` with the openjfx plugin; `LadderModel` (unit-tested) + `DashboardApp` (coalesced `Platform.runLater`).
+
+**Gate M5 (2026-10-12):**
+- [x] Subscriber converges to the exact top-35 depth through a proxy with 10% loss, 5% duplication and 0–20 ms reordering (1,062 packets, 110 dropped, 71 gaps detected, 35 snapshots).
+- [x] `DepthBook == OrderBook.depth()` on random streams.
+- [ ] "The UI shows a live book under load and never blocks the FX thread": **needs a human to watch it.** The UI is built so that updates are coalesced and the FX thread never does I/O, but nobody has looked at the window yet. Run `mizan node --dev`, `mizan load`, and `./gradlew :mizan-ui:run`.
 
 ## M6
-- [ ] M6-T1 Blocks
-- [ ] M6-T2 Genesis loader
-- [ ] M6-T3 BlockStore
-- [ ] M6-T4 SnapshotStore
-- [ ] M6-T5 Recovery
-- [ ] M6-T6 ConsensusEngine / SingleNodeConsensus
-- [ ] M6-T7 Commit path + FINAL
-- [ ] M6-T8 Speculative/committed split + rollback
-- [ ] M6-T9 Node wiring
-- [ ] M6-T10 Crash test
+- [x] M6-T1 Blocks: canonical header (125 bytes), block, cert (with round, ADR 0013), vote sign-bytes, `ValidatorSet`; round-trip, 2,000-flip tamper detection, quorum tests.
+- [x] M6-T2 Genesis loader: strict Jackson JSON (unknown/missing fields rejected) + genesis anchor.
+- [x] M6-T3 BlockStore: `[len][crc32c][payload]`, fsync per append, torn tail truncated at every cut point, mid-log corruption refused.
+- [x] M6-T4 SnapshotStore: temp + fsync + atomic rename, keep 2, corrupt snapshots skipped.
+- [x] M6-T5 Recovery: newest valid snapshot + replay with cert, link, txRoot and root checks; refuses a snapshot beyond the log.
+- [x] M6-T6 ConsensusEngine / SingleNodeConsensus.
+- [x] M6-T7 Commit path + FINAL: validate on a copy → append+fsync → adopt → snapshot → Committed → FINAL; result cache rebuilt from replayed blocks on start.
+- [x] M6-T8 Speculative/committed split + rollback: draft epochs; sequencer replays in-flight + pending. `PersistentNodeTest.revokeStartsAtOldestUncommittedTrade` (defect 6).
+- [x] M6-T9 Node wiring: `mizan genesis --out g.json`, `mizan node --genesis g.json --data dir --key dev:0`; graceful shutdown.
+- [x] M6-T10 Crash test: child JVM killed at before-append, mid-append, after-append-before-snapshot, mid-snapshot, mid-block and at random; after every kill, recovery is checked against an independent full replay and every client FINAL.
 
-## M7–M10
-See spec §8; expand here when M6's gate passes.
+**Regression tests verified (2026-10-12):** `scripts/verify-regressions.sh` plants defects 1 (sequencer and block validity), 2, 3, 4, 5, 6, 8, 9, plus a hash-map iteration and a clock read, back into the code. Each makes its named test **fail**, not merely stop compiling. Earlier one-off checks in M2/M3/M4 only grepped for "BUILD FAILED", which a compile error could also produce; this script supersedes them.
+
+**Gate M6 (2026-10-12): passed.** `./gradlew :mizan-node:recoveryTest -Piter=200`: 200 iterations, all passed. Kills per fault: after-append-before-snapshot 33, before-append 34, mid-append 34, mid-block 33, mid-snapshot 33, random 33. The fault point was actually reached in all but one mid-append iteration, which was killed after 60 s instead. Final height 3,432; 30,901 torn bytes truncated over the run; every client FINAL in the logs was found at its reported height with its order id. (The reported 4,664,500 checks are cumulative: each iteration re-checks all earlier logs.) An independent replay from genesis matched the recovered root after every kill.
+
+## M7
+- [x] M7-T1 `docs/protocol.md`: rules L11–L65, timeouts, locking, evidence, safety/liveness arguments, deviations. **Review by a second person is still outstanding.**
+- [x] M7-T2 SPI + simulator: `Network`, `Clock`, `Scheduler`; `SimWorld` (single-threaded, `(time, order)`, seeded, crash incarnations), `SimNetwork` (loss, duplication, delay/reorder, partitions, link cuts).
+- [x] M7-T3 Messages: PROPOSAL / VOTE / COMMIT codecs with signatures; fuzzed (only `ProtocolException`).
+- [x] M7-T4 `RoundBft`: single-threaded event loop, same code in the simulator and over TCP; fixed proposer (validator 0).
+- [x] M7-T5 `ConsensusWal`: append-only, fsynced before any message; torn tail ignored, earlier corruption refused, compaction with Windows-safe rename. Re-sends an already-signed vote, never a different one (ADR 0014). `walPreventsEquivocationAfterRestart` includes a negative control (no WAL ⇒ equivocation detected).
+- [x] M7-T6 Block validity: `BlockValidator` (§6.8 table). `BlockValidityTest.authFailedInBlockIsInvalid` (defect 1), `oldBlockValidDuringSync` (defect 2); `CachingVerifier` shared with the gateway.
+- [x] M7-T7 `TcpNetwork`: persistent peer links with reconnect/backoff and bounded drop-oldest queues. `BftDriver` runs consensus on the `consensus` thread. **4-validator localhost TCP smoke test passes** (all replicas at the same height and root).
+- [x] M7-T8 Cluster + evidence: `mizan cluster --nodes 4`; equivocation logged to `evidence.log`. Docker compose was not built (optional in the spec).
+- [x] M7-T9 Sweeps: HAPPY, CRASH (validator 2 down then restarted), BYZANTINE (validator 3 double-votes), LOSS (10–30% loss, 5–50 ms jitter, 5% duplication, then heal), RESTARTS (validator 1 crash/restart ×40).
+
+**Gate M7 (2026-10-12): passed.** `./gradlew :mizan-sim:simSweep -Pseeds=1000`: 1,000 seeds × 5 scenarios, all passed: no conflicting commits, and every honest validator advanced ≥ 5 heights after the last fault healed. Message counts: HAPPY 0.98M, CRASH 7.4M, BYZANTINE 2.9M, LOSS 1.7M, RESTARTS 7.2M; 79,039 Byzantine equivocations logged. **An earlier run passed vacuously** (targets were reached before faults fired). That was caught by identical HAPPY/CRASH message counts, and fixed with block pacing and a "progress after heal" stop condition before the run above. TCP smoke test passes.
+
+## M8–M10
+See spec §8.
 
 ## Known issues / deferred
-- JavaFX plugin application deferred to M5-T4.
+- M5 UI not visually verified (see Gate M5).
+- Result-cache rebuild covers only blocks replayed after the newest snapshot (ADR 0013).
+- A corrupted block-log length field pointing past EOF is indistinguishable from a torn tail (ADR 0013).

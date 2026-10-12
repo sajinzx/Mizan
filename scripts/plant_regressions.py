@@ -25,6 +25,10 @@ PLANTS = [
      ':mizan-engine:test', '*ArchRulesTest.noRawMultiplyOnMoney'),
     ("hash iteration", [(E + 'OrderBook.java', '    return index.size();', '    int n = 0;\n    for (Order o : index.values()) {\n      if (o.remaining() > 0) {\n        n++;\n      }\n    }\n    return n;')],
      ':mizan-engine:test', '*ArchRulesTest.noHashOrderedIteration'),
+    ("defect 1 (block)", [('mizan-chain/src/main/java/com/sajin/mizan/chain/BlockValidator.java', 'if (r.status() == ExecResult.Status.AUTH_FAILED) {', 'if (r.status() == null) {')],
+     ':mizan-chain:test', '*BlockValidityTest.authFailedInBlockIsInvalid'),
+    ("defect 2", [('mizan-chain/src/main/java/com/sajin/mizan/chain/BlockValidator.java', 'if (mode == Mode.LIVE && Math.abs(h.timestampMillis() - nowMillis) > MAX_CLOCK_SKEW_MS) {', 'if (mode != null && Math.abs(h.timestampMillis() - nowMillis) > MAX_CLOCK_SKEW_MS) {')],
+     ':mizan-chain:test', '*BlockValidityTest.oldBlockValidDuringSync'),
     ("clock", [(E + 'Ledger.java', '  public long total(int asset) {\n', '  public long total(int asset) {\n    if (System.nanoTime() == 42L) {\n      return 0;\n    }\n')],
      ':mizan-engine:test', '*ArchRulesTest.noClock'),
 ]
