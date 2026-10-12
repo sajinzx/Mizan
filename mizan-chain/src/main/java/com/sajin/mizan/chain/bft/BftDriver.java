@@ -3,15 +3,20 @@ package com.sajin.mizan.chain.bft;
 import com.sajin.mizan.chain.Block;
 import com.sajin.mizan.chain.BlockHeader;
 import com.sajin.mizan.chain.BlockValidator;
+import com.sajin.mizan.chain.CommitCert;
 import com.sajin.mizan.chain.CommittedBlock;
 import com.sajin.mizan.chain.Recovery;
 import com.sajin.mizan.chain.ValidatorSet;
+import com.sajin.mizan.core.CommandCodec;
+import com.sajin.mizan.core.EngineListener;
 import com.sajin.mizan.core.ExecResult;
 import com.sajin.mizan.core.FinalityListener;
 import com.sajin.mizan.core.GenesisConfig;
 import com.sajin.mizan.core.InvariantViolationError;
 import com.sajin.mizan.core.PersistenceException;
 import com.sajin.mizan.core.ProtocolException;
+import com.sajin.mizan.core.ResultListener;
+import com.sajin.mizan.core.SignedCommand;
 import com.sajin.mizan.crypto.SignatureVerifier;
 import com.sajin.mizan.engine.ExecutionCore;
 import com.sajin.mizan.engine.Sequencer;
@@ -20,6 +25,7 @@ import com.sajin.mizan.store.BlockStore;
 import com.sajin.mizan.store.SnapshotStore;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -65,7 +71,23 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
       long emptyBlockMs,
       RoundBft.Observer observer) {}
 
+  /**
+   * Rotation mode (M8): blocks come from the command pool rather than sequencer drafts. Provisional
+   * results of this validator's own proposals go to {@code provisional}; the engine events of
+   * decided blocks go to {@code committedEvents}, followed by {@code REVOKE} when this validator's
+   * own proposal lost.
+   */
+  public record Rotation(
+      CommandPool pool,
+      ResultListener provisional,
+      EngineListener committedEvents,
+      long gossipIntervalMs) {}
+
   private final Config cfg;
+  private final Rotation rotation;
+  private final Map<ByteBuffer, RecordedEvents> events = new HashMap<>();
+  private byte[] myProposalHash;
+  private long myProposalFirstTradeSeq = -1;
   private final ValidatorSet vs;
   private final BlockStore store;
   private final SnapshotStore snapshots;
@@ -74,6 +96,7 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
   private final ArrayDeque<Sequencer.BlockDraft> drafts = new ArrayDeque<>();
   private final Map<ByteBuffer, BlockValidator.Valid> validated = new HashMap<>();
   private volatile Throwable failure;
+  private volatile boolean closing;
   private Network network;
   private Sequencer sequencer;
   private RoundBft bft;
@@ -81,7 +104,7 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
   // ---- owned by the consensus thread ----
   private ExecutionCore committed;
   private volatile long height;
-  private byte[] head;
+  private volatile byte[] head;
   private long headTimestamp;
   private long lastDecidedAt;
   private Sequencer.BlockDraft current;
@@ -93,7 +116,18 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
       BlockStore store,
       SnapshotStore snapshots,
       FinalityListener finality) {
+    this(cfg, from, store, snapshots, finality, null);
+  }
+
+  public BftDriver(
+      Config cfg,
+      Recovery.Recovered from,
+      BlockStore store,
+      SnapshotStore snapshots,
+      FinalityListener finality,
+      Rotation rotation) {
     this.cfg = cfg;
+    this.rotation = rotation;
     this.vs = new ValidatorSet(cfg.genesis());
     this.store = store;
     this.snapshots = snapshots;
@@ -141,7 +175,39 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
                   head,
                   headTimestamp);
           bft.start();
+          if (rotation != null) {
+            scheduleGossip();
+          }
         });
+  }
+
+  /** New commands may be in the pool: let a waiting proposer propose (any thread). */
+  public void poke() {
+    run(() -> bft.valueReady());
+  }
+
+  /** A peer's height from heartbeats (any thread): sync if it is ahead. */
+  public void onPeerHeight(int peer, long peerHeight) {
+    run(() -> bft.onPeerHeight(peer, peerHeight));
+  }
+
+  /** Gossips a locally received command to every validator (any thread). */
+  public void gossip(SignedCommand c) {
+    network.broadcast(ConsensusMessage.encode(new ConsensusMessage.Tx(cfg.me(), c.raw())));
+  }
+
+  private void scheduleGossip() {
+    scheduler()
+        .schedule(
+            rotation.gossipIntervalMs(),
+            () -> {
+              long now = System.currentTimeMillis();
+              for (SignedCommand c :
+                  rotation.pool().dueForGossip(now, 2 * rotation.gossipIntervalMs(), 256)) {
+                gossip(c);
+              }
+              scheduleGossip();
+            });
   }
 
   /** A sequencer draft (sequencer thread). */
@@ -160,6 +226,11 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
     return height;
   }
 
+  /** Hash of the latest committed block (the genesis anchor at height 0). */
+  public byte[] headHash() {
+    return head.clone();
+  }
+
   public Throwable failure() {
     return failure;
   }
@@ -173,7 +244,7 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
     try {
       loop.execute(
           () -> {
-            if (failure != null) {
+            if (failure != null || closing) {
               return;
             }
             try {
@@ -202,7 +273,7 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
           var unused =
               loop.schedule(
                   () -> {
-                    if (!cancelled[0] && failure == null) {
+                    if (!cancelled[0] && failure == null && !closing) {
                       try {
                         task.run();
                       } catch (RuntimeException | Error e) {
@@ -235,6 +306,9 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
     return new RoundBft.App() {
       @Override
       public Block propose(long h, int round, byte[] prevHash, long prevTs) {
+        if (rotation != null) {
+          return proposeFromPool(h, round, prevHash, prevTs);
+        }
         if (current == null) {
           current = drafts.pollFirst();
         }
@@ -268,30 +342,27 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
 
       @Override
       public boolean valid(Block b) {
-        return remember(
-            b,
-            BlockValidator.validate(
-                b,
-                null,
-                committed,
-                context(),
-                BlockValidator.Mode.LIVE,
-                System.currentTimeMillis(),
-                cfg.verifier()));
+        return check(b, null, BlockValidator.Mode.LIVE);
       }
 
       @Override
       public boolean validCommitted(CommittedBlock cb) {
-        return remember(
-            cb.block(),
-            BlockValidator.validate(
-                cb.block(),
-                cb.cert(),
-                committed,
-                context(),
-                BlockValidator.Mode.SYNC,
-                System.currentTimeMillis(),
-                cfg.verifier()));
+        return check(cb.block(), cb.cert(), BlockValidator.Mode.SYNC);
+      }
+
+      @Override
+      public void onTx(int from, byte[] envelope) {
+        if (rotation == null) {
+          return;
+        }
+        try {
+          SignedCommand c = CommandCodec.decode(envelope);
+          if (rotation.pool().add(c, false, System.currentTimeMillis()) == CommandPool.Added.NEW) {
+            bft.valueReady();
+          }
+        } catch (ProtocolException e) {
+          // malformed gossip: ignore
+        }
       }
 
       @Override
@@ -311,6 +382,80 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
         }
       }
     };
+  }
+
+  /** Validates {@code b}; keeps the replayed core and its engine events for the decision. */
+  private boolean check(Block b, CommitCert cert, BlockValidator.Mode mode) {
+    ByteBuffer key = ByteBuffer.wrap(b.hash());
+    if (validated.containsKey(key)) {
+      return true; // e.g. our own proposal, already executed
+    }
+    RecordedEvents ev = new RecordedEvents();
+    BlockValidator.Result r =
+        BlockValidator.validate(
+            b, cert, committed, context(), mode, System.currentTimeMillis(), cfg.verifier(), ev);
+    if (remember(b, r)) {
+      events.put(key, ev);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Rotation-mode proposal: execute the head of the pool on a copy of the committed core (the only
+   * optimistic execution in this mode), skip commands that fail authentication (defect 1), and
+   * report provisional results to local clients.
+   */
+  private Block proposeFromPool(long h, int round, byte[] prevHash, long prevTs) {
+    long now = System.currentTimeMillis();
+    int max = cfg.genesis().block().maxCommands();
+    List<SignedCommand> candidates = rotation.pool().peek(4 * max);
+    ExecutionCore next = committed.copy();
+    long firstTradeSeq = next.nextTradeSeq();
+    RecordedEvents ev = new RecordedEvents();
+    List<SignedCommand> included = new ArrayList<>();
+    List<ExecResult> results = new ArrayList<>();
+    List<SignedCommand> unauthenticated = new ArrayList<>();
+    for (SignedCommand c : candidates) {
+      if (included.size() == max) {
+        break;
+      }
+      ExecResult r = next.execute(c, ev);
+      if (r.status() == ExecResult.Status.AUTH_FAILED) {
+        unauthenticated.add(c);
+      } else {
+        included.add(c);
+        results.add(r);
+      }
+    }
+    rotation.pool().remove(unauthenticated);
+    if (included.isEmpty() && now - lastDecidedAt < cfg.emptyBlockMs()) {
+      scheduler().schedule(cfg.emptyBlockMs() - (now - lastDecidedAt), () -> bft.valueReady());
+      return null;
+    }
+    long ts = Math.max(prevTs + 1, now);
+    Block b =
+        new Block(
+            new BlockHeader(
+                BlockHeader.VERSION,
+                vs.chainId(),
+                h,
+                round,
+                prevHash,
+                Block.txRoot(included),
+                next.stateRoot(),
+                cfg.me(),
+                ts),
+            included);
+    ByteBuffer key = ByteBuffer.wrap(b.hash());
+    validated.put(key, new BlockValidator.Valid(next, results));
+    events.put(key, ev);
+    myProposalHash = b.hash();
+    myProposalFirstTradeSeq = firstTradeSeq;
+    for (int i = 0; i < included.size(); i++) {
+      rotation.provisional().onResult(included.get(i), results.get(i));
+    }
+    return b;
   }
 
   private boolean remember(Block b, BlockValidator.Result r) {
@@ -347,7 +492,8 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
       throw new IllegalStateException("cannot persist block " + cb.height(), e);
     }
     boolean ownDraft =
-        current != null
+        rotation == null
+            && current != null
             && !cb.block().commands().isEmpty()
             && Arrays.equals(cb.block().header().txRoot(), Block.txRoot(current.commands()));
     if (ownDraft) {
@@ -355,7 +501,7 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
       while (!sequencer.control(new Sequencer.Committed(height))) {
         Thread.onSpinWait();
       }
-    } else if (current != null && !cb.block().commands().isEmpty()) {
+    } else if (rotation == null && current != null && !cb.block().commands().isEmpty()) {
       // Someone else's non-empty block landed first: our draft is stale.
       epoch++;
       current = null;
@@ -365,6 +511,25 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
       }
     }
     List<ExecResult> results = v.results();
+    if (rotation != null) {
+      if (myProposalHash != null
+          && !Arrays.equals(myProposalHash, cb.block().hash())
+          && myProposalFirstTradeSeq >= 0) {
+        rotation
+            .committedEvents()
+            .onRevoke(myProposalFirstTradeSeq); // provisional results are void
+      }
+      myProposalHash = null;
+      myProposalFirstTradeSeq = -1;
+      RecordedEvents ev = events.get(ByteBuffer.wrap(cb.block().hash()));
+      if (ev != null) {
+        ev.replayTo(rotation.committedEvents());
+      }
+      rotation.pool().remove(cb.block().commands());
+      ExecutionCore c = committed;
+      rotation.pool().dropStale(c::lastNonce);
+    }
+    events.clear();
     if (!cb.block().commands().isEmpty()) {
       LOG.info(
           "validator {}: committed height {} round {} with {} commands",
@@ -376,9 +541,11 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
     finality.onFinal(height, cb.block().commands(), results);
   }
 
+  /** Skips queued work and lets the running task (possibly an fsync) finish; no interrupts. */
   @Override
   public void close() {
-    loop.shutdownNow();
+    closing = true;
+    loop.shutdown();
     try {
       loop.awaitTermination(5, TimeUnit.SECONDS);
     } catch (InterruptedException e) {

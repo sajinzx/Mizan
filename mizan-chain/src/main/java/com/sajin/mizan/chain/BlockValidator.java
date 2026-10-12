@@ -1,5 +1,6 @@
 package com.sajin.mizan.chain;
 
+import com.sajin.mizan.core.EngineListener;
 import com.sajin.mizan.core.ExecResult;
 import com.sajin.mizan.core.SignedCommand;
 import com.sajin.mizan.crypto.SignatureVerifier;
@@ -78,6 +79,19 @@ public final class BlockValidator {
       Mode mode,
       long nowMillis,
       SignatureVerifier verifier) {
+    return validate(b, cert, committed, ctx, mode, nowMillis, verifier, ExecutionCore.SILENT);
+  }
+
+  /** As above, delivering the replay's engine events to {@code events}. */
+  public static Result validate(
+      Block b,
+      CommitCert cert,
+      ExecutionCore committed,
+      Context ctx,
+      Mode mode,
+      long nowMillis,
+      SignatureVerifier verifier,
+      EngineListener events) {
     BlockHeader h = b.header();
     ValidatorSet vs = ctx.validators();
     if (h.version() != BlockHeader.VERSION || h.chainId() != vs.chainId()) {
@@ -111,7 +125,7 @@ public final class BlockValidator {
     ExecutionCore next = committed.copy();
     List<ExecResult> results = new ArrayList<>(b.commands().size());
     for (SignedCommand c : b.commands()) {
-      ExecResult r = next.execute(c, ExecutionCore.SILENT);
+      ExecResult r = next.execute(c, events);
       if (r.status() == ExecResult.Status.AUTH_FAILED) {
         return new Invalid("contains an unauthenticated command (" + r.reason() + ")"); // defect 1
       }
