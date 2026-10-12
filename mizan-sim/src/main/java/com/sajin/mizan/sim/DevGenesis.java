@@ -1,6 +1,7 @@
 package com.sajin.mizan.sim;
 
 import com.sajin.mizan.core.GenesisConfig;
+import com.sajin.mizan.crypto.Signer;
 import com.sajin.mizan.testkit.Fixtures;
 
 /**
@@ -17,5 +18,10 @@ public final class DevGenesis {
 
   public static GenesisConfig config() {
     return config(1);
+  }
+
+  /** The public dev key of validator {@code index}. */
+  public static Signer validatorKey(int index) {
+    return Fixtures.validatorSigner(index);
   }
 }

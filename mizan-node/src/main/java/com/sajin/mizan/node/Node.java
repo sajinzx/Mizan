@@ -1,18 +1,34 @@
 package com.sajin.mizan.node;
 
+import com.sajin.mizan.chain.ChainDriver;
+import com.sajin.mizan.chain.GenesisAnchor;
+import com.sajin.mizan.chain.Recovery;
+import com.sajin.mizan.chain.SingleNodeConsensus;
+import com.sajin.mizan.chain.ValidatorSet;
 import com.sajin.mizan.core.Accounts;
 import com.sajin.mizan.core.EngineListener;
+import com.sajin.mizan.core.FinalityListener;
 import com.sajin.mizan.core.GenesisConfig;
+import com.sajin.mizan.core.PersistenceException;
 import com.sajin.mizan.crypto.CachingVerifier;
 import com.sajin.mizan.crypto.SignatureVerifier;
+import com.sajin.mizan.crypto.Signer;
 import com.sajin.mizan.engine.ExecutionCore;
 import com.sajin.mizan.engine.Sequencer;
 import com.sajin.mizan.net.ResultCache;
 import com.sajin.mizan.net.TcpGateway;
 import com.sajin.mizan.net.md.MarketDataService;
+import com.sajin.mizan.store.BlockStore;
+import com.sajin.mizan.store.SnapshotStore;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,10 +37,13 @@ import org.slf4j.LoggerFactory;
  * gateway (§6.9 threads). Listener fan-out:
  *
  * <ul>
- *   <li>engine events (sequencer thread) → gateway (TRADE/REVOKE pushes) + extra listeners;
+ *   <li>engine events (sequencer thread) → gateway (TRADE/REVOKE pushes), market data, extras;
  *   <li>provisional results (sequencer thread) → signature pre-check key directory → gateway;
- *   <li>finality (consensus thread) → gateway (FINAL).
+ *   <li>finality (consensus thread) → gateway (FINAL) + extras.
  * </ul>
+ *
+ * <p>Two chain layers: {@link #startInMemory} (instant commit, no persistence) and {@link
+ * #startPersistent} (block log + snapshots + single-node consensus, recovered on start).
  */
 public final class Node implements AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(Node.class);
@@ -61,21 +80,46 @@ public final class Node implements AutoCloseable {
     }
   }
 
+  /** Persistence tuning. {@code failHook} lets tests reject drafts (M6-T8); null in production. */
+  public record Persistence(
+      Path dataDir,
+      int snapshotEvery,
+      int keepSnapshots,
+      Predicate<Sequencer.BlockDraft> failHook) {
+    public static Persistence at(Path dataDir) {
+      return new Persistence(dataDir, 100, 2, null);
+    }
+
+    public Persistence withSnapshotEvery(int n) {
+      return new Persistence(dataDir, n, keepSnapshots, failHook);
+    }
+
+    public Persistence withFailHook(Predicate<Sequencer.BlockDraft> hook) {
+      return new Persistence(dataDir, snapshotEvery, keepSnapshots, hook);
+    }
+  }
+
   private final Settings settings;
   private final CachingVerifier verifier;
-  private final ExecutionCore committed;
-  private final InstantChain chain;
+  private final ChainLayer chain;
   private final Sequencer sequencer;
   private final TcpGateway gateway;
   private final MarketDataService marketData;
+  private final List<AutoCloseable> extraClosers = new ArrayList<>();
 
-  private Node(Settings s, List<EngineListener> extraListeners) throws IOException {
+  private Node(
+      Settings s,
+      CachingVerifier verifier,
+      ExecutionCore committedStart,
+      Function<FinalityListener, ChainLayer> chainFactory,
+      List<EngineListener> extraListeners,
+      List<FinalityListener> extraFinality)
+      throws IOException {
     this.settings = s;
-    this.verifier = new CachingVerifier(SignatureVerifier.ed25519());
-    ExecutionCore genesisCore = ExecutionCore.genesis(s.genesis(), verifier);
-    this.committed = genesisCore.copy();
+    this.verifier = verifier;
     SignaturePreCheck preCheck = new SignaturePreCheck(verifier);
     preCheck.learn(Accounts.ADMIN_ACCOUNT, s.genesis().adminPubKey());
+    committedStart.forEachAccount((account, nonce, pk) -> preCheck.learn(account, pk));
     ResultCache cache = new ResultCache(1024, s.resultCacheCapacity());
     // The gateway needs the sequencer as its sink, and the sequencer needs the gateway as a
     // listener: break the cycle with a forwarding sink.
@@ -86,7 +130,10 @@ public final class Node implements AutoCloseable {
             s.gatewayPreCheck() ? preCheck : TcpGateway.PreCheck.ACCEPT_ALL,
             cache,
             s.gateway());
-    this.chain = new InstantChain(committed, gateway);
+    List<FinalityListener> finals = new ArrayList<>();
+    finals.add(gateway);
+    finals.addAll(extraFinality);
+    this.chain = chainFactory.apply(Listeners.finality(finals));
     List<EngineListener> engineListeners = new ArrayList<>();
     engineListeners.add(gateway);
     if (s.marketDataPort() >= 0) {
@@ -101,7 +148,7 @@ public final class Node implements AutoCloseable {
     engineListeners.addAll(extraListeners);
     this.sequencer =
         new Sequencer(
-            genesisCore,
+            committedStart.copy(),
             Listeners.engine(engineListeners),
             Listeners.results(List.of(preCheck, gateway)),
             chain,
@@ -110,18 +157,133 @@ public final class Node implements AutoCloseable {
     seqRef[0] = sequencer;
   }
 
+  private void startThreads() throws IOException {
+    sequencer.start();
+    chain.start(sequencer);
+    gateway.start();
+  }
+
   /** Builds and starts an in-memory node (no persistence). */
   public static Node startInMemory(Settings s, List<EngineListener> extraListeners)
       throws IOException {
-    Node n = new Node(s, extraListeners);
-    n.sequencer.start();
-    n.chain.start(n.sequencer);
-    n.gateway.start();
+    CachingVerifier v = new CachingVerifier(SignatureVerifier.ed25519());
+    ExecutionCore genesis = ExecutionCore.genesis(s.genesis(), v);
+    Node n =
+        new Node(
+            s, v, genesis, f -> new InstantChain(genesis.copy(), f), extraListeners, List.of());
+    n.startThreads();
     LOG.info(
         "node up: chainId={} gateway=127.0.0.1:{} (in-memory, instant commit)",
         s.genesis().chainId(),
         n.gateway.port());
     return n;
+  }
+
+  /**
+   * Recovers from {@code p.dataDir()} (block log + snapshots) and starts a single-validator node
+   * that signs blocks with {@code validatorKey}.
+   */
+  public static Node startPersistent(
+      Settings s,
+      Persistence p,
+      Signer validatorKey,
+      List<EngineListener> extraListeners,
+      List<FinalityListener> extraFinality)
+      throws IOException {
+    GenesisConfig g = s.genesis();
+    Files.createDirectories(p.dataDir());
+    checkAnchor(g, p.dataDir());
+    CachingVerifier v = new CachingVerifier(SignatureVerifier.ed25519());
+    BlockStore store = BlockStore.open(p.dataDir().resolve("blocks.log"));
+    SnapshotStore snaps = new SnapshotStore(p.dataDir().resolve("snapshots"), p.keepSnapshots());
+    long t0 = System.nanoTime();
+    Recovery.Recovered r = Recovery.recover(g, v, store, snaps, 64);
+    LOG.info(
+        "recovered height {} (snapshot {}, {} torn bytes truncated) in {} ms",
+        r.height(),
+        r.snapshotHeight(),
+        store.truncatedBytes(),
+        (System.nanoTime() - t0) / 1_000_000);
+    SingleNodeConsensus consensus =
+        new SingleNodeConsensus(new ValidatorSet(g), validatorKey, System::currentTimeMillis);
+    Node n =
+        new Node(
+            s,
+            v,
+            r.committed(),
+            f ->
+                new PersistentChain(
+                    new ChainDriver(r, consensus, store, snaps, p.snapshotEvery(), f, p.failHook()),
+                    store),
+            extraListeners,
+            extraFinality);
+    // Rebuild the result cache from the replayed tail of the chain (ADR 0003).
+    for (Recovery.Replayed b : r.recent()) {
+      n.gateway.onFinal(b.height(), b.commands(), b.results());
+    }
+    n.startThreads();
+    LOG.info(
+        "node up: chainId={} height={} gateway=127.0.0.1:{} data={}",
+        g.chainId(),
+        r.height(),
+        n.gateway.port(),
+        p.dataDir());
+    return n;
+  }
+
+  private static void checkAnchor(GenesisConfig g, Path dataDir) throws IOException {
+    Path f = dataDir.resolve("genesis.anchor");
+    String anchor = HexFormat.of().formatHex(GenesisAnchor.hash(g));
+    if (Files.exists(f)) {
+      String existing = Files.readString(f, StandardCharsets.US_ASCII).trim();
+      if (!existing.equals(anchor)) {
+        throw new PersistenceException(
+            "data dir " + dataDir + " belongs to a different genesis (" + existing + ")");
+      }
+    } else {
+      Files.writeString(f, anchor + "\n", StandardCharsets.US_ASCII);
+    }
+  }
+
+  /** Adapts {@link ChainDriver} (and the block log it owns) to {@link ChainLayer}. */
+  private static final class PersistentChain implements ChainLayer {
+    private final ChainDriver driver;
+    private final BlockStore store;
+
+    PersistentChain(ChainDriver driver, BlockStore store) {
+      this.driver = driver;
+      this.store = store;
+    }
+
+    @Override
+    public void accept(Sequencer.BlockDraft d) {
+      driver.accept(d);
+    }
+
+    @Override
+    public void start(Sequencer s) {
+      driver.start(s);
+    }
+
+    @Override
+    public long height() {
+      return driver.height();
+    }
+
+    @Override
+    public ExecutionCore committedCore() {
+      return driver.committedCore();
+    }
+
+    @Override
+    public void close() {
+      driver.close();
+      try {
+        store.close();
+      } catch (PersistenceException e) {
+        LOG.warn("closing block log: {}", e.toString());
+      }
+    }
   }
 
   public int gatewayPort() {
@@ -145,16 +307,18 @@ public final class Node implements AutoCloseable {
     return chain.height();
   }
 
-  /**
-   * The committed core. Only safe to read after {@link #close()} (it is owned by the consensus
-   * thread while running).
-   */
+  /** The committed core. Only safe to read after {@link #close()}. */
   public ExecutionCore committedCore() {
-    return committed;
+    return chain.committedCore();
   }
 
   public Settings settings() {
     return settings;
+  }
+
+  /** Closes {@code c} when the node closes (after the core components). */
+  public void closeWith(AutoCloseable c) {
+    extraClosers.add(c);
   }
 
   @Override
@@ -168,6 +332,13 @@ public final class Node implements AutoCloseable {
     chain.close();
     if (marketData != null) {
       marketData.close();
+    }
+    for (AutoCloseable c : extraClosers) {
+      try {
+        c.close();
+      } catch (Exception e) {
+        LOG.warn("closing {}: {}", c, e.toString());
+      }
     }
     LOG.info("node stopped at height {}", chain.height());
   }

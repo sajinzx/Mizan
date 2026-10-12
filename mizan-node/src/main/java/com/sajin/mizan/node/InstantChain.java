@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.function.Consumer;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * In-memory "chain" for dev mode before persistence existed (M4). It commits every draft
@@ -19,14 +19,14 @@ import java.util.function.Consumer;
  * nothing survives a restart. Superseded by the block store and single-node consensus in M6, and
  * kept for in-memory tests.
  */
-final class InstantChain implements Consumer<Sequencer.BlockDraft>, AutoCloseable {
+final class InstantChain implements ChainLayer {
   private final LinkedBlockingQueue<Sequencer.BlockDraft> drafts = new LinkedBlockingQueue<>();
   private final ExecutionCore committed;
   private final FinalityListener finality;
   private volatile Sequencer sequencer;
   private volatile boolean running = true;
   private final Thread thread;
-  private long height;
+  private final AtomicLong height = new AtomicLong();
 
   InstantChain(ExecutionCore committed, FinalityListener finality) {
     this.committed = committed;
@@ -34,7 +34,8 @@ final class InstantChain implements Consumer<Sequencer.BlockDraft>, AutoCloseabl
     this.thread = Thread.ofPlatform().name("consensus").daemon(true).unstarted(this::loop);
   }
 
-  void start(Sequencer seq) {
+  @Override
+  public void start(Sequencer seq) {
     this.sequencer = seq;
     thread.start();
   }
@@ -55,21 +56,27 @@ final class InstantChain implements Consumer<Sequencer.BlockDraft>, AutoCloseabl
         }
         if (!Arrays.equals(committed.stateRoot(), d.stateRoot())) {
           throw new InvariantViolationError(
-              "committed root differs from draft root at " + (height + 1));
+              "committed root differs from draft root at " + (height.get() + 1));
         }
-        height++;
-        while (!sequencer.control(new Sequencer.Committed(height))) {
+        long h = height.incrementAndGet();
+        while (!sequencer.control(new Sequencer.Committed(h))) {
           Thread.onSpinWait();
         }
-        finality.onFinal(height, d.commands(), results);
+        finality.onFinal(h, d.commands(), results);
       }
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     }
   }
 
-  long height() {
-    return height;
+  @Override
+  public long height() {
+    return height.get();
+  }
+
+  @Override
+  public ExecutionCore committedCore() {
+    return committed;
   }
 
   @Override

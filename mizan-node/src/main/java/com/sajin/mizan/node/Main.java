@@ -1,7 +1,9 @@
 package com.sajin.mizan.node;
 
+import com.sajin.mizan.core.GenesisConfig;
 import com.sajin.mizan.sim.DevGenesis;
 import com.sajin.mizan.sim.LoadGenerator;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -15,7 +17,7 @@ import picocli.CommandLine.Option;
     mixinStandardHelpOptions = true,
     version = "mizan 0.1.0",
     description = "Deterministic order-book chain (educational; simulated assets only).",
-    subcommands = {Main.NodeCmd.class, Main.LoadCmd.class})
+    subcommands = {Main.NodeCmd.class, Main.LoadCmd.class, Main.GenesisCmd.class})
 public final class Main implements Callable<Integer> {
 
   public static void main(String[] args) {
@@ -45,16 +47,44 @@ public final class Main implements Callable<Integer> {
         description = "UDP market-data port (-1 = off).")
     int mdPort;
 
+    @Option(names = "--genesis", description = "Genesis JSON (persistent mode).")
+    Path genesis;
+
+    @Option(names = "--data", description = "Data directory: block log and snapshots.")
+    Path data;
+
+    @Option(
+        names = "--key",
+        description = "Validator key file (base64 seed), or dev:<i> for a public dev key.")
+    String key;
+
+    @Option(
+        names = "--snapshot-every",
+        defaultValue = "100",
+        description = "Blocks between snapshots.")
+    int snapshotEvery;
+
     @Override
     public Integer call() throws Exception {
-      if (!dev) {
-        System.err.println(
-            "only --dev is available in this build; persistent nodes arrive with M6");
-        return 2;
+      Node node;
+      if (dev) {
+        node =
+            Node.startInMemory(
+                Node.Settings.dev(DevGenesis.config(), port).withMarketData(mdPort), List.of());
+      } else {
+        if (genesis == null || data == null || key == null) {
+          System.err.println("persistent mode needs --genesis, --data and --key (or use --dev)");
+          return 2;
+        }
+        GenesisConfig g = GenesisJson.read(genesis);
+        node =
+            Node.startPersistent(
+                Node.Settings.dev(g, port).withMarketData(mdPort),
+                Node.Persistence.at(data).withSnapshotEvery(snapshotEvery),
+                KeyFiles.load(key),
+                List.of(),
+                List.of());
       }
-      Node node =
-          Node.startInMemory(
-              Node.Settings.dev(DevGenesis.config(), port).withMarketData(mdPort), List.of());
       CountDownLatch done = new CountDownLatch(1);
       Runtime.getRuntime()
           .addShutdownHook(
@@ -68,8 +98,31 @@ public final class Main implements Callable<Integer> {
           "gateway 127.0.0.1:"
               + node.gatewayPort()
               + "  market data udp 127.0.0.1:"
-              + node.marketDataPort());
+              + node.marketDataPort()
+              + "  height "
+              + node.height());
       done.await();
+      return 0;
+    }
+  }
+
+  /** {@code mizan genesis --dev}: write the public dev genesis as JSON. */
+  @Command(
+      name = "genesis",
+      mixinStandardHelpOptions = true,
+      description = "Write a dev genesis JSON (public dev keys; local use only).")
+  static final class GenesisCmd implements Callable<Integer> {
+    @Option(names = "--validators", defaultValue = "1")
+    int validators;
+
+    @Option(names = "--out", required = true)
+    Path out;
+
+    @Override
+    public Integer call() throws Exception {
+      GenesisJson.write(DevGenesis.config(validators), out);
+      System.out.println(
+          "wrote " + out + " (validator keys: dev:0 .. dev:" + (validators - 1) + ")");
       return 0;
     }
   }
