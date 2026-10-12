@@ -20,6 +20,16 @@ public final class DevGenesis {
     return config(1);
   }
 
+  /** The public dev admin key (can deposit any amount; local experiments only). */
+  public static Signer adminKey() {
+    return Fixtures.adminSigner();
+  }
+
+  /** The public dev key of {@code account}. */
+  public static Signer accountKey(long account) {
+    return Fixtures.accountSigner(account);
+  }
+
   /** The public dev key of validator {@code index}. */
   public static Signer validatorKey(int index) {
     return Fixtures.validatorSigner(index);

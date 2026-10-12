@@ -11,9 +11,9 @@ import java.security.SecureRandom;
 import java.util.Base64;
 
 /**
- * Validator and account key files: one line with the base64 of a 32-byte Ed25519 seed. {@code
- * dev:<i>} instead of a path selects the public dev validator key {@code i} (local experiments
- * only).
+ * Validator and account key files: one line with the base64 of a 32-byte Ed25519 seed. Instead of a
+ * path, {@code dev:<i>} selects the public dev validator key {@code i}, {@code dev-admin} the dev
+ * admin key and {@code dev-account:<n>} the dev key of account {@code n} (local experiments only).
  */
 public final class KeyFiles {
   private KeyFiles() {}
@@ -22,6 +22,12 @@ public final class KeyFiles {
     try {
       if (spec.startsWith("dev:")) {
         return DevGenesis.validatorKey(Integer.parseInt(spec.substring(4)));
+      }
+      if (spec.equals("dev-admin")) {
+        return DevGenesis.adminKey();
+      }
+      if (spec.startsWith("dev-account:")) {
+        return DevGenesis.accountKey(Long.parseLong(spec.substring(12)));
       }
       byte[] seed =
           Base64.getDecoder()

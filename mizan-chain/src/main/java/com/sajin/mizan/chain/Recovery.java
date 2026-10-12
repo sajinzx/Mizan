@@ -88,48 +88,13 @@ public final class Recovery {
     ArrayDeque<Replayed> recent = new ArrayDeque<>();
     for (int i = 0; i < n; i++) {
       long height = i + 1L;
-      CommittedBlock cb;
-      try {
-        cb = CommittedBlock.decode(store.read(i));
-      } catch (ProtocolException e) {
-        throw new PersistenceException("block " + height + " does not decode", e);
-      }
+      CommittedBlock cb = readLinked(store, i, g, prev);
       BlockHeader h = cb.block().header();
-      if (h.height() != height || h.chainId() != g.chainId()) {
-        throw new PersistenceException(
-            "block " + height + " has height " + h.height() + " / chain " + h.chainId());
-      }
-      if (!Arrays.equals(h.prevHash(), prev)) {
-        throw new PersistenceException("block " + height + " does not link to its predecessor");
-      }
-      if (!cb.block().txRootMatches()) {
-        throw new PersistenceException("block " + height + " has a wrong txRoot");
-      }
       if (height == snapHeight && !Arrays.equals(h.stateRoot(), core.stateRoot())) {
         throw new PersistenceException("snapshot root differs from block " + height + " root");
       }
       if (height > snapHeight) {
-        if (!validators.verifies(cb.cert(), height, cb.block().hash(), verifier)) {
-          throw new PersistenceException("block " + height + " has an invalid commit certificate");
-        }
-        List<ExecResult> results = new ArrayList<>(cb.block().commands().size());
-        for (SignedCommand c : cb.block().commands()) {
-          ExecResult r = core.execute(c, ExecutionCore.SILENT);
-          if (r.status() == ExecResult.Status.AUTH_FAILED) {
-            throw new PersistenceException(
-                "block " + height + " contains an unauthenticated command");
-          }
-          results.add(r);
-        }
-        if (!Arrays.equals(core.stateRoot(), h.stateRoot())) {
-          throw new PersistenceException(
-              "replayed state root differs at height "
-                  + height
-                  + ": "
-                  + HexFormat.of().formatHex(core.stateRoot())
-                  + " vs header "
-                  + HexFormat.of().formatHex(h.stateRoot()));
-        }
+        List<ExecResult> results = applyCertified(validators, verifier, core, cb);
         recent.addLast(new Replayed(height, cb.block().commands(), results));
         while (recent.size() > keepRecent) {
           recent.removeFirst();
@@ -139,5 +104,64 @@ public final class Recovery {
       lastTs = h.timestampMillis();
     }
     return new Recovered(core, n, prev, lastTs, snapHeight, List.copyOf(recent));
+  }
+
+  /**
+   * Decodes record {@code i} (height {@code i + 1}) and checks its height, chain id, link to {@code
+   * prev} and transaction root.
+   */
+  static CommittedBlock readLinked(BlockStore store, int i, GenesisConfig g, byte[] prev)
+      throws PersistenceException {
+    long height = i + 1L;
+    CommittedBlock cb;
+    try {
+      cb = CommittedBlock.decode(store.read(i));
+    } catch (ProtocolException e) {
+      throw new PersistenceException("block " + height + " does not decode", e);
+    }
+    BlockHeader h = cb.block().header();
+    if (h.height() != height || h.chainId() != g.chainId()) {
+      throw new PersistenceException(
+          "block " + height + " has height " + h.height() + " / chain " + h.chainId());
+    }
+    if (!Arrays.equals(h.prevHash(), prev)) {
+      throw new PersistenceException("block " + height + " does not link to its predecessor");
+    }
+    if (!cb.block().txRootMatches()) {
+      throw new PersistenceException("block " + height + " has a wrong txRoot");
+    }
+    return cb;
+  }
+
+  /**
+   * Verifies the commit certificate of {@code cb}, replays its commands on {@code core}, and checks
+   * the resulting state root against the header.
+   */
+  static List<ExecResult> applyCertified(
+      ValidatorSet validators, SignatureVerifier verifier, ExecutionCore core, CommittedBlock cb)
+      throws PersistenceException {
+    long height = cb.height();
+    BlockHeader h = cb.block().header();
+    if (!validators.verifies(cb.cert(), height, cb.block().hash(), verifier)) {
+      throw new PersistenceException("block " + height + " has an invalid commit certificate");
+    }
+    List<ExecResult> results = new ArrayList<>(cb.block().commands().size());
+    for (SignedCommand c : cb.block().commands()) {
+      ExecResult r = core.execute(c, ExecutionCore.SILENT);
+      if (r.status() == ExecResult.Status.AUTH_FAILED) {
+        throw new PersistenceException("block " + height + " contains an unauthenticated command");
+      }
+      results.add(r);
+    }
+    if (!Arrays.equals(core.stateRoot(), h.stateRoot())) {
+      throw new PersistenceException(
+          "replayed state root differs at height "
+              + height
+              + ": "
+              + HexFormat.of().formatHex(core.stateRoot())
+              + " vs header "
+              + HexFormat.of().formatHex(h.stateRoot()));
+    }
+    return results;
   }
 }

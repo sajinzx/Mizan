@@ -107,7 +107,33 @@ public final class SnapshotStore {
     }
   }
 
+  /**
+   * Every snapshot in {@code dir} whose checksum verifies, newest first, without creating or
+   * deleting anything (for {@code mizan verify-chain}). Empty if {@code dir} does not exist.
+   */
+  public static List<Snapshot> readAllValid(Path dir) throws PersistenceException {
+    if (!Files.isDirectory(dir)) {
+      return List.of();
+    }
+    try {
+      List<Snapshot> out = new ArrayList<>();
+      for (Path p : snapshotFiles(dir)) {
+        Snapshot s = readVerified(p);
+        if (s != null) {
+          out.add(s);
+        }
+      }
+      return out;
+    } catch (IOException e) {
+      throw new PersistenceException("cannot list snapshots in " + dir, e);
+    }
+  }
+
   private List<Path> snapshotFiles() throws IOException {
+    return snapshotFiles(dir);
+  }
+
+  private static List<Path> snapshotFiles(Path dir) throws IOException {
     try (Stream<Path> s = Files.list(dir)) {
       List<Path> files =
           new ArrayList<>(

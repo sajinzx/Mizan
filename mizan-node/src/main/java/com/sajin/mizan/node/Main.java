@@ -21,7 +21,10 @@ import picocli.CommandLine.Option;
       Main.NodeCmd.class,
       Main.LoadCmd.class,
       Main.GenesisCmd.class,
-      Main.ClusterCmd.class
+      Main.ClusterCmd.class,
+      Tools.VerifyChainCmd.class,
+      Tools.KeygenCmd.class,
+      Tools.FaucetCmd.class
     })
 public final class Main implements Callable<Integer> {
 

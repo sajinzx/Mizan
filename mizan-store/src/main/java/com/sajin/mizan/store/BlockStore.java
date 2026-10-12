@@ -34,18 +34,37 @@ public final class BlockStore implements AutoCloseable {
   private final List<Long> offsets = new ArrayList<>();
   private long end;
   private final long truncatedBytes;
+  private final boolean readOnly;
 
-  private BlockStore(Path file, FileChannel ch, long truncatedBytes) {
+  private BlockStore(Path file, FileChannel ch, long truncatedBytes, boolean readOnly) {
     this.file = file;
     this.ch = ch;
     this.truncatedBytes = truncatedBytes;
+    this.readOnly = readOnly;
   }
 
   public static BlockStore open(Path file) throws PersistenceException {
+    return open(file, false);
+  }
+
+  /**
+   * Opens an existing log without modifying it (for {@code mizan verify-chain}): a torn tail is
+   * reported by {@link #truncatedBytes()} and skipped, not truncated; {@link #append} is refused.
+   */
+  public static BlockStore openReadOnly(Path file) throws PersistenceException {
+    return open(file, true);
+  }
+
+  private static BlockStore open(Path file, boolean readOnly) throws PersistenceException {
     try {
       FileChannel ch =
-          FileChannel.open(
-              file, StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
+          readOnly
+              ? FileChannel.open(file, StandardOpenOption.READ)
+              : FileChannel.open(
+                  file,
+                  StandardOpenOption.CREATE,
+                  StandardOpenOption.READ,
+                  StandardOpenOption.WRITE);
       long size = ch.size();
       List<Long> offsets = new ArrayList<>();
       long pos = 0;
@@ -90,11 +109,11 @@ public final class BlockStore implements AutoCloseable {
         pos += 8 + len;
       }
       long truncated = size - pos;
-      if (truncated > 0) {
+      if (truncated > 0 && !readOnly) {
         ch.truncate(pos);
         ch.force(true);
       }
-      BlockStore s = new BlockStore(file, ch, truncated);
+      BlockStore s = new BlockStore(file, ch, truncated, readOnly);
       s.offsets.addAll(offsets);
       s.end = pos;
       return s;
@@ -105,7 +124,7 @@ public final class BlockStore implements AutoCloseable {
     }
   }
 
-  /** Bytes removed from a torn tail when the log was opened. */
+  /** Bytes of a torn tail found when the log was opened (removed unless read-only). */
   public long truncatedBytes() {
     return truncatedBytes;
   }
@@ -131,6 +150,9 @@ public final class BlockStore implements AutoCloseable {
 
   /** Appends one record and fsyncs before returning. */
   public void append(byte[] payload) throws PersistenceException {
+    if (readOnly) {
+      throw new PersistenceException("block log " + file + " is open read-only");
+    }
     if (payload.length > MAX_RECORD) {
       throw new PersistenceException("record too large: " + payload.length);
     }
