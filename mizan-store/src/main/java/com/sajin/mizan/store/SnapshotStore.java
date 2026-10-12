@@ -8,7 +8,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -87,7 +86,7 @@ public final class SnapshotStore {
     }
     try {
       try {
-        Files.move(tmp, fin, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        ConsensusWal.moveWithRetry(tmp, fin);
       } catch (AtomicMoveNotSupportedException e) {
         throw new PersistenceException("filesystem does not support atomic rename", e);
       }
