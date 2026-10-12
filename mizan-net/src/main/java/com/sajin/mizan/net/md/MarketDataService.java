@@ -40,10 +40,14 @@ import org.agrona.concurrent.OneToOneConcurrentArrayQueue;
 public final class MarketDataService implements EngineListener, AutoCloseable {
   private static final long SUBSCRIPTION_TTL_NANOS = TimeUnit.SECONDS.toNanos(10);
 
+  /** Default cap on live subscriptions: a flood of SUBSCRIBE datagrams cannot grow the map. */
+  public static final int DEFAULT_MAX_SUBSCRIBERS = 1_024;
+
   private final OneToOneConcurrentArrayQueue<MarketEvent> queue;
   private final AtomicLong overflow = new AtomicLong();
   private final DatagramSocket socket;
   private final long heartbeatNanos;
+  private final int maxSubscribers;
   private final Map<SocketAddress, Long> subscribers = new ConcurrentHashMap<>();
   private final AtomicReference<byte[]> snapshot;
   private final AtomicLong published = new AtomicLong();
@@ -64,6 +68,20 @@ public final class MarketDataService implements EngineListener, AutoCloseable {
   public MarketDataService(
       int queueCapacity, int udpPort, long heartbeatMs, List<Integer> instruments)
       throws SocketException {
+    this(queueCapacity, udpPort, heartbeatMs, instruments, DEFAULT_MAX_SUBSCRIBERS);
+  }
+
+  /**
+   * As above, with at most {@code maxSubscribers} live subscriptions (new ones beyond are ignored).
+   */
+  public MarketDataService(
+      int queueCapacity,
+      int udpPort,
+      long heartbeatMs,
+      List<Integer> instruments,
+      int maxSubscribers)
+      throws SocketException {
+    this.maxSubscribers = maxSubscribers;
     this.queue = new OneToOneConcurrentArrayQueue<>(queueCapacity);
     this.socket =
         new DatagramSocket(new InetSocketAddress(InetAddress.getLoopbackAddress(), udpPort));
@@ -201,7 +219,10 @@ public final class MarketDataService implements EngineListener, AutoCloseable {
         DatagramPacket p = new DatagramPacket(buf, buf.length);
         socket.receive(p);
         if (p.getLength() == 1 && buf[0] == MdCodec.SUBSCRIBE) {
-          subscribers.put(p.getSocketAddress(), System.nanoTime());
+          SocketAddress from = p.getSocketAddress();
+          if (subscribers.containsKey(from) || subscribers.size() < maxSubscribers) {
+            subscribers.put(from, System.nanoTime()); // refresh, or a new one under the cap
+          }
         }
       } catch (IOException e) {
         if (!running) {

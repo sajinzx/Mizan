@@ -31,6 +31,8 @@ All messages are signed by their sender over canonical bytes and carry the sende
 - `PROPOSAL(h, r, validRound, block)`: signed bytes `"CBPROP1" || chainId || h || r || validRound || id(block)`.
 - `PREVOTE(h, r, id | nil)` and `PRECOMMIT(h, r, id | nil)`: vote sign-bytes of §5.7; nil signs 32 zero bytes.
 
+M8 adds unsigned messages whose content authenticates itself: `COMMIT(block, cert)` and `SYNC_RESP(blocks)` carry certificates, `TX` carries a client-signed command, and `SYNC_REQ(fromHeight, max ≤ 64)` is a request. Their sender index comes from the **authenticated peer link** (M9-T3). On connect, the acceptor sends a 32-byte random challenge. The dialer answers with its index and an Ed25519 signature, made with its validator key, over `chainId || "MZPEER1" || to || from || challenge`. Every later frame on that link must carry the same index. A validator serves at most one `SYNC_RESP` per peer per 100 ms (≤ 64 blocks, ≤ 1 MiB). It ignores a peer for 60 s once that peer serves a block that fails certificate or replay checks.
+
 A message is dropped, never acted on, if its signature or validator index is invalid, its height is not the current one (except one height ahead, which is buffered), or it duplicates one already recorded.
 
 ## State (per validator)

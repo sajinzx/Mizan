@@ -111,6 +111,31 @@ final class BftSetup {
     };
   }
 
+  /**
+   * Peer-link authentication with validator keys (M9-T3). The chain id is prefixed to every
+   * handshake transcript, so a key reused on another chain cannot be replayed here.
+   */
+  static TcpNetwork.PeerAuth peerAuth(GenesisConfig g, Signer key) {
+    com.sajin.mizan.chain.ValidatorSet vs = new com.sajin.mizan.chain.ValidatorSet(g);
+    SignatureVerifier ed = SignatureVerifier.ed25519();
+    MessageSigner signer = MessageSigner.of(key);
+    return new TcpNetwork.PeerAuth() {
+      @Override
+      public byte[] sign(byte[] message) {
+        return signer.sign(withChain(g.chainId(), message));
+      }
+
+      @Override
+      public boolean verify(int peer, byte[] message, byte[] signature) {
+        return ed.verify(vs.key(peer), withChain(g.chainId(), message), signature);
+      }
+    };
+  }
+
+  private static byte[] withChain(int chainId, byte[] message) {
+    return java.nio.ByteBuffer.allocate(4 + message.length).putInt(chainId).put(message).array();
+  }
+
   private static String hex(byte[] h) {
     return h == null ? "nil" : HexFormat.of().formatHex(h, 0, 8);
   }
@@ -184,7 +209,8 @@ final class BftSetup {
     WalSafetyStore safety =
         new WalSafetyStore(new ConsensusWal(p.dataDir().resolve("consensus.wal")));
     TcpNetwork net =
-        new TcpNetwork(me, peers(g), (from, msg) -> ref[0].onNetworkMessage(from, msg));
+        new TcpNetwork(
+            me, peers(g), peerAuth(g, key), (from, msg) -> ref[0].onNetworkMessage(from, msg));
     BftDriver driver =
         new BftDriver(
             new BftDriver.Config(

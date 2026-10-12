@@ -1,0 +1,23 @@
+name: dependencies
+
+# Submits the resolved Gradle dependency graph so GitHub's advisory database can flag known
+# vulnerabilities (Dependabot alerts) in direct and transitive dependencies (M9-T3).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/dependency-submission@v5

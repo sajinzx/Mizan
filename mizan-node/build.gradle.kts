@@ -17,6 +17,7 @@ dependencies {
     testImplementation(project(":mizan-testkit"))
     testImplementation(libs.hdrhistogram)
     testImplementation(libs.logback.classic)
+    testImplementation(libs.archunit.junit5)
 }
 
 application {

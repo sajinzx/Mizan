@@ -35,6 +35,8 @@ public final class FrameCodec {
   public static final int SNAPSHOT = 0x22;
   // Peer -> peer (M7+)
   public static final int PEER = 0x40;
+  public static final int PEER_CHALLENGE = 0x41;
+  public static final int PEER_HELLO = 0x42;
 
   private FrameCodec() {}
 

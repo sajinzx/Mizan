@@ -10,6 +10,8 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -26,12 +28,45 @@ import org.slf4j.LoggerFactory;
  * {@code PEER} frame with payload {@code [from:4][message]}. Outbound queues are bounded and drop
  * the oldest message when a peer is unreachable: consensus retransmits, so loss is tolerated.
  *
+ * <p><b>Peer authentication (M9-T3).</b> The acceptor sends a fresh 32-byte challenge; the dialer
+ * answers {@code PEER_HELLO [from:4][sig]} with {@code sig} over {@code "MZPEER1" || to || from ||
+ * challenge} made with its validator key. Only then is the connection bound to {@code from}, and
+ * every later frame must carry that same {@code from}. Without this, anyone who could reach a peer
+ * port could speak as any validator for the unsigned messages (sync, gossip) and, for example, get
+ * an honest validator banned from sync. Links are still plaintext (no TLS; see the threat model).
+ *
  * <p>Inbound messages are handed to {@code inbox} on network threads; the consumer must hand them
  * over to the consensus event loop.
  */
 public final class TcpNetwork implements Network, AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(TcpNetwork.class);
   private static final int QUEUE = 4_096;
+  private static final int HANDSHAKE_TIMEOUT_MS = 5_000;
+  private static final byte[] DOMAIN = "MZPEER1".getBytes(StandardCharsets.US_ASCII);
+
+  /** Signs this validator's handshakes and verifies other validators'. */
+  public interface PeerAuth {
+    byte[] sign(byte[] message);
+
+    boolean verify(int peer, byte[] message, byte[] signature);
+
+    /** No authentication: accepts any claimed identity. Tests of the transport only. */
+    PeerAuth NONE =
+        new PeerAuth() {
+          @Override
+          public byte[] sign(byte[] message) {
+            return new byte[0];
+          }
+
+          @Override
+          public boolean verify(int peer, byte[] message, byte[] signature) {
+            return true;
+          }
+        };
+  }
+
+  private final PeerAuth auth;
+  private final SecureRandom random = new SecureRandom();
 
   private final int me;
   private final List<InetSocketAddress> peers;
@@ -42,8 +77,10 @@ public final class TcpNetwork implements Network, AutoCloseable {
   private volatile boolean running = true;
   private ServerSocket server;
 
-  public TcpNetwork(int me, List<InetSocketAddress> peers, BiConsumer<Integer, byte[]> inbox) {
+  public TcpNetwork(
+      int me, List<InetSocketAddress> peers, PeerAuth auth, BiConsumer<Integer, byte[]> inbox) {
     this.me = me;
+    this.auth = auth;
     this.peers = List.copyOf(peers);
     this.inbox = inbox;
     for (int i = 0; i < peers.size(); i++) {
@@ -98,6 +135,8 @@ public final class TcpNetwork implements Network, AutoCloseable {
         s.connect(peers.get(peer), 2_000);
         s.setTcpNoDelay(true);
         sockets.add(s);
+        OutputStream out = new BufferedOutputStream(s.getOutputStream());
+        answerChallenge(s, peer, out);
         backoff = 100;
         connected = true;
         LOG.atInfo()
@@ -105,7 +144,6 @@ public final class TcpNetwork implements Network, AutoCloseable {
             .addKeyValue("me", me)
             .addKeyValue("peer", peer)
             .log();
-        OutputStream out = new BufferedOutputStream(s.getOutputStream());
         while (running) {
           byte[] frame = q.pollFirst(500, TimeUnit.MILLISECONDS);
           if (frame == null) {
@@ -150,9 +188,73 @@ public final class TcpNetwork implements Network, AutoCloseable {
     }
   }
 
+  /** Dialer side: read the acceptor's challenge and prove we are validator {@code me}. */
+  private void answerChallenge(Socket s, int peer, OutputStream out) throws IOException {
+    s.setSoTimeout(HANDSHAKE_TIMEOUT_MS);
+    FrameCodec.Frame c = FrameCodec.read(new BufferedInputStream(s.getInputStream()));
+    if (c == null || c.type() != FrameCodec.PEER_CHALLENGE || c.payload().length != 32) {
+      throw new IOException("peer " + peer + " sent no valid challenge");
+    }
+    byte[] sig = auth.sign(transcript(peer, me, c.payload()));
+    out.write(
+        FrameCodec.encode(
+            FrameCodec.PEER_HELLO,
+            ByteBuffer.allocate(4 + sig.length).putInt(me).put(sig).array()));
+    out.flush();
+    s.setSoTimeout(0);
+  }
+
+  private static byte[] transcript(int to, int from, byte[] challenge) {
+    return ByteBuffer.allocate(DOMAIN.length + 8 + challenge.length)
+        .put(DOMAIN)
+        .putInt(to)
+        .putInt(from)
+        .put(challenge)
+        .array();
+  }
+
+  /**
+   * Acceptor side: challenge the dialer and verify its hello. Returns the authenticated peer index,
+   * or {@code -1} to drop the connection.
+   */
+  private int authenticate(Socket s, InputStream in) throws IOException {
+    byte[] challenge = new byte[32];
+    random.nextBytes(challenge);
+    OutputStream out = s.getOutputStream();
+    out.write(FrameCodec.encode(FrameCodec.PEER_CHALLENGE, challenge));
+    out.flush();
+    s.setSoTimeout(HANDSHAKE_TIMEOUT_MS);
+    FrameCodec.Frame h = FrameCodec.read(in);
+    s.setSoTimeout(0);
+    if (h == null || h.type() != FrameCodec.PEER_HELLO || h.payload().length < 4) {
+      return -1;
+    }
+    ByteBuffer b = ByteBuffer.wrap(h.payload());
+    int from = b.getInt();
+    byte[] sig = new byte[b.remaining()];
+    b.get(sig);
+    if (from < 0 || from >= peers.size() || from == me) {
+      return -1;
+    }
+    if (!auth.verify(from, transcript(me, from, challenge), sig)) {
+      LOG.atWarn()
+          .setMessage("peer_auth_failed")
+          .addKeyValue("me", me)
+          .addKeyValue("claimed", from)
+          .addKeyValue("remote", String.valueOf(s.getRemoteSocketAddress()))
+          .log();
+      return -1;
+    }
+    return from;
+  }
+
   private void readLoop(Socket s) {
     try (s) {
       InputStream in = new BufferedInputStream(s.getInputStream());
+      int peer = authenticate(s, in);
+      if (peer < 0) {
+        return;
+      }
       FrameCodec.Frame f;
       while (running && (f = FrameCodec.read(in)) != null) {
         if (f.type() != FrameCodec.PEER || f.payload().length < 4) {
@@ -160,11 +262,12 @@ public final class TcpNetwork implements Network, AutoCloseable {
         }
         ByteBuffer b = ByteBuffer.wrap(f.payload());
         int from = b.getInt();
+        if (from != peer) {
+          return; // a frame claiming another identity: drop the connection
+        }
         byte[] msg = new byte[b.remaining()];
         b.get(msg);
-        if (from >= 0 && from < peers.size() && from != me) {
-          inbox.accept(from, msg);
-        }
+        inbox.accept(from, msg);
       }
     } catch (IOException e) {
       // peer went away; it reconnects

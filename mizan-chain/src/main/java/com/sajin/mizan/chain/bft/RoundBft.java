@@ -46,6 +46,8 @@ import java.util.TreeMap;
  * the peer can catch up.
  */
 public final class RoundBft {
+  /** Minimum time between two sync responses to the same peer (M9-T3). */
+  static final long SYNC_SERVE_INTERVAL_MS = 100;
 
   /** Steps within a round. */
   public enum Step {
@@ -158,6 +160,7 @@ public final class RoundBft {
   private final Map<Integer, Long> lastCatchUpReply = new HashMap<>();
   private final Map<Integer, Long> lastSyncRequest = new HashMap<>();
   private final Map<Integer, Long> bannedUntil = new HashMap<>();
+  private final Map<Integer, Long> lastServed = new HashMap<>();
   private long syncedBlocks;
   private Scheduler.Cancellable proposeTimer;
   private boolean started;
@@ -254,6 +257,12 @@ public final class RoundBft {
     if (from < 0 || from >= vs.size() || r.fromHeight() < 1) {
       return;
     }
+    long now = cfg.scheduler().nowMillis();
+    Long last = lastServed.get(from);
+    if (last != null && now - last < SYNC_SERVE_INTERVAL_MS) {
+      return; // at most one response (≤ 64 blocks, ≤ 1 MiB) per peer per interval
+    }
+    lastServed.put(from, now);
     List<CommittedBlock> blocks = new ArrayList<>();
     long bytes = 0;
     int max = Math.min(Math.max(r.max(), 1), ConsensusMessage.MAX_SYNC_BLOCKS);

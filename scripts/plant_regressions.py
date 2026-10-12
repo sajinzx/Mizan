@@ -31,6 +31,10 @@ PLANTS = [
      ':mizan-chain:test', '*BlockValidityTest.oldBlockValidDuringSync'),
     ("clock", [(E + 'Ledger.java', '  public long total(int asset) {\n', '  public long total(int asset) {\n    if (System.nanoTime() == 42L) {\n      return 0;\n    }\n')],
      ':mizan-engine:test', '*ArchRulesTest.noClock'),
+    ("peer auth", [('mizan-net/src/main/java/com/sajin/mizan/net/TcpNetwork.java', 'if (!auth.verify(from, transcript(me, from, challenge), sig)) {', 'if (sig == null) {')],
+     ':mizan-node:test', '*PeerAuthTest.onlyKeyHoldersCanSpeakForAValidator'),
+    ("md subscriber cap", [('mizan-net/src/main/java/com/sajin/mizan/net/md/MarketDataService.java', 'subscribers.containsKey(from) || subscribers.size() < maxSubscribers', 'subscribers.containsKey(from) || maxSubscribers > 0')],
+     ':mizan-net:test', '*SubscriberCapTest.subscriptionsAreCapped'),
 ]
 
 BACKUP = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'build', 'plant-backup.json')

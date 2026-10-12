@@ -1,0 +1,12 @@
+# Dependency scanning (M9-T3): weekly update PRs for Gradle (version catalog) and Actions.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly

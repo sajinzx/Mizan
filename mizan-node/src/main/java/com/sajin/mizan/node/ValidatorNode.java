@@ -138,7 +138,11 @@ public final class ValidatorNode implements AutoCloseable {
     FinalityListener finality = Listeners.finality(List.of(preCheck, gateway));
 
     TcpNetwork net =
-        new TcpNetwork(me, BftSetup.peers(g), (from, msg) -> ref[0].onNetworkMessage(from, msg));
+        new TcpNetwork(
+            me,
+            BftSetup.peers(g),
+            BftSetup.peerAuth(g, key),
+            (from, msg) -> ref[0].onNetworkMessage(from, msg));
     BftDriver driver =
         new BftDriver(
             new BftDriver.Config(
