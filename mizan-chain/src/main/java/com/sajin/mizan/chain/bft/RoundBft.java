@@ -83,6 +83,14 @@ public final class RoundBft {
     default void roundStarted(long height, int round) {}
 
     default void decided(long height, int round) {}
+
+    /** Blocks from {@code peer} were applied by sync; this validator is now at {@code height}. */
+    default void synced(int peer, long height, int blocks) {}
+
+    /**
+     * {@code peer} served an invalid block during sync and is ignored until {@code untilMillis}.
+     */
+    default void peerBanned(int peer, long untilMillis) {}
   }
 
   /** Who proposes at {@code (height, round)}. */
@@ -268,6 +276,7 @@ public final class RoundBft {
     if (banned != null && now < banned) {
       return;
     }
+    int applied = 0;
     for (CommittedBlock cb : r.blocks()) {
       if (cb.height() < height) {
         continue;
@@ -277,9 +286,14 @@ public final class RoundBft {
       }
       if (!tryCommit(cb)) {
         bannedUntil.put(from, now + 60_000); // served an invalid block
+        cfg.observer().peerBanned(from, now + 60_000);
         return;
       }
       syncedBlocks++;
+      applied++;
+    }
+    if (applied > 0) {
+      cfg.observer().synced(from, height - 1, applied);
     }
     if (!r.blocks().isEmpty() && r.blocks().get(r.blocks().size() - 1).height() >= height) {
       return;

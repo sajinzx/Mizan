@@ -233,7 +233,7 @@ public final class TcpGateway
         c.start();
       } catch (IOException e) {
         if (!closed) {
-          LOG.warn("accept failed: {}", e.toString());
+          LOG.atWarn().setMessage("gateway_accept_failed").addKeyValue("error", e.toString()).log();
         }
       }
     }

@@ -1,11 +1,27 @@
 <configuration>
-  <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
+  <!--
+    Structured logging (M9-T2). The message is an event name (node_start, committed, round_bump,
+    synced, peer_banned, equivocation, revoke, rollback, ...); details are SLF4J key-value pairs.
+    -Dmizan.log.format=JSON writes one JSON object per line; the default TEXT appends key="value".
+    -Dmizan.log.level=DEBUG also shows empty blocks.
+  -->
+  <appender name="TEXT" class="ch.qos.logback.core.ConsoleAppender">
     <target>System.err</target>
     <encoder>
-      <pattern>%d{HH:mm:ss.SSS} %-5level [%thread] %logger{20} %msg%n</pattern>
+      <pattern>%d{HH:mm:ss.SSS} %-5level [%thread] %logger{20} %msg %kvp%n</pattern>
+    </encoder>
+  </appender>
+  <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+    <target>System.err</target>
+    <encoder class="ch.qos.logback.classic.encoder.JsonEncoder">
+      <withContext>false</withContext>
+      <withSequenceNumber>false</withSequenceNumber>
+      <withNanoseconds>false</withNanoseconds>
+      <withArguments>false</withArguments>
+      <withFormattedMessage>false</withFormattedMessage>
     </encoder>
   </appender>
   <root level="${mizan.log.level:-INFO}">
-    <appender-ref ref="STDERR"/>
+    <appender-ref ref="${mizan.log.format:-TEXT}"/>
   </root>
 </configuration>

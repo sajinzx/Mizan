@@ -251,7 +251,12 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
               task.run();
             } catch (RuntimeException | Error e) {
               failure = e;
-              LOG.error("consensus halted", e);
+              LOG.atError()
+                  .setMessage("consensus_halted")
+                  .addKeyValue("validator", cfg.me())
+                  .addKeyValue("height", height)
+                  .setCause(e)
+                  .log();
             }
           });
     } catch (java.util.concurrent.RejectedExecutionException e) {
@@ -278,7 +283,12 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
                         task.run();
                       } catch (RuntimeException | Error e) {
                         failure = e;
-                        LOG.error("consensus halted", e);
+                        LOG.atError()
+                            .setMessage("consensus_halted")
+                            .addKeyValue("validator", cfg.me())
+                            .addKeyValue("height", height)
+                            .setCause(e)
+                            .log();
                       }
                     }
                   },
@@ -463,11 +473,13 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
       validated.put(ByteBuffer.wrap(b.hash()), v);
       return true;
     }
-    LOG.warn(
-        "validator {}: invalid block at height {}: {}",
-        cfg.me(),
-        b.height(),
-        ((BlockValidator.Invalid) r).reason());
+    LOG.atWarn()
+        .setMessage("invalid_block")
+        .addKeyValue("validator", cfg.me())
+        .addKeyValue("height", b.height())
+        .addKeyValue("proposer", b.header().proposer())
+        .addKeyValue("reason", ((BlockValidator.Invalid) r).reason())
+        .log();
     return false;
   }
 
@@ -506,6 +518,11 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
       epoch++;
       current = null;
       drafts.clear();
+      LOG.atWarn()
+          .setMessage("rollback")
+          .addKeyValue("validator", cfg.me())
+          .addKeyValue("height", height)
+          .log();
       while (!sequencer.control(new Sequencer.Rollback(committed.copy(), List.of()))) {
         Thread.onSpinWait();
       }
@@ -515,6 +532,12 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
       if (myProposalHash != null
           && !Arrays.equals(myProposalHash, cb.block().hash())
           && myProposalFirstTradeSeq >= 0) {
+        LOG.atInfo()
+            .setMessage("revoke")
+            .addKeyValue("validator", cfg.me())
+            .addKeyValue("height", height)
+            .addKeyValue("fromTradeSeq", myProposalFirstTradeSeq)
+            .log();
         rotation
             .committedEvents()
             .onRevoke(myProposalFirstTradeSeq); // provisional results are void
@@ -530,14 +553,15 @@ public final class BftDriver implements Consumer<Sequencer.BlockDraft>, AutoClos
       rotation.pool().dropStale(c::lastNonce);
     }
     events.clear();
-    if (!cb.block().commands().isEmpty()) {
-      LOG.info(
-          "validator {}: committed height {} round {} with {} commands",
-          cfg.me(),
-          height,
-          cb.cert().round(),
-          cb.block().commands().size());
-    }
+    // Empty blocks arrive every few hundred ms: log them at DEBUG only.
+    (cb.block().commands().isEmpty() ? LOG.atDebug() : LOG.atInfo())
+        .setMessage("committed")
+        .addKeyValue("validator", cfg.me())
+        .addKeyValue("height", height)
+        .addKeyValue("round", cb.cert().round())
+        .addKeyValue("proposer", cb.block().header().proposer())
+        .addKeyValue("commands", cb.block().commands().size())
+        .log();
     finality.onFinal(height, cb.block().commands(), results);
   }
 

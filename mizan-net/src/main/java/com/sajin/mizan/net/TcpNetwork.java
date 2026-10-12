@@ -91,6 +91,7 @@ public final class TcpNetwork implements Network, AutoCloseable {
 
   private void sendLoop(int peer) {
     long backoff = 100;
+    boolean connected = false;
     LinkedBlockingDeque<byte[]> q = outbound.get(peer);
     while (running) {
       try (Socket s = new Socket()) {
@@ -98,6 +99,12 @@ public final class TcpNetwork implements Network, AutoCloseable {
         s.setTcpNoDelay(true);
         sockets.add(s);
         backoff = 100;
+        connected = true;
+        LOG.atInfo()
+            .setMessage("peer_link_up")
+            .addKeyValue("me", me)
+            .addKeyValue("peer", peer)
+            .log();
         OutputStream out = new BufferedOutputStream(s.getOutputStream());
         while (running) {
           byte[] frame = q.pollFirst(500, TimeUnit.MILLISECONDS);
@@ -110,6 +117,15 @@ public final class TcpNetwork implements Network, AutoCloseable {
           }
         }
       } catch (IOException e) {
+        if (connected && running) {
+          LOG.atInfo()
+              .setMessage("peer_link_down")
+              .addKeyValue("me", me)
+              .addKeyValue("peer", peer)
+              .addKeyValue("error", e.toString())
+              .log();
+        }
+        connected = false;
         if (running) {
           sleep(backoff);
           backoff = Math.min(2_000, backoff * 2);
@@ -128,7 +144,7 @@ public final class TcpNetwork implements Network, AutoCloseable {
         threads.add(Thread.ofVirtual().name("peer-in-" + me).start(() -> readLoop(s)));
       } catch (IOException e) {
         if (running) {
-          LOG.warn("peer accept failed: {}", e.toString());
+          LOG.atWarn().setMessage("peer_accept_failed").addKeyValue("error", e.toString()).log();
         }
       }
     }

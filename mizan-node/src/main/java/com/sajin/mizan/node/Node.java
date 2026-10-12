@@ -185,10 +185,12 @@ public final class Node implements AutoCloseable {
             extraListeners,
             List.of());
     n.startThreads();
-    LOG.info(
-        "node up: chainId={} gateway=127.0.0.1:{} (in-memory, instant commit)",
-        s.genesis().chainId(),
-        n.gateway.port());
+    LOG.atInfo()
+        .setMessage("node_start")
+        .addKeyValue("mode", "in-memory")
+        .addKeyValue("chainId", s.genesis().chainId())
+        .addKeyValue("gatewayPort", n.gateway.port())
+        .log();
     return n;
   }
 
@@ -211,12 +213,13 @@ public final class Node implements AutoCloseable {
     SnapshotStore snaps = new SnapshotStore(p.dataDir().resolve("snapshots"), p.keepSnapshots());
     long t0 = System.nanoTime();
     Recovery.Recovered r = Recovery.recover(g, v, store, snaps, 64);
-    LOG.info(
-        "recovered height {} (snapshot {}, {} torn bytes truncated) in {} ms",
-        r.height(),
-        r.snapshotHeight(),
-        store.truncatedBytes(),
-        (System.nanoTime() - t0) / 1_000_000);
+    LOG.atInfo()
+        .setMessage("recovered")
+        .addKeyValue("height", r.height())
+        .addKeyValue("snapshot", r.snapshotHeight())
+        .addKeyValue("tornBytes", store.truncatedBytes())
+        .addKeyValue("ms", (System.nanoTime() - t0) / 1_000_000)
+        .log();
     SingleNodeConsensus consensus =
         new SingleNodeConsensus(new ValidatorSet(g), validatorKey, System::currentTimeMillis);
     Node n =
@@ -236,12 +239,14 @@ public final class Node implements AutoCloseable {
       n.gateway.onFinal(b.height(), b.commands(), b.results());
     }
     n.startThreads();
-    LOG.info(
-        "node up: chainId={} height={} gateway=127.0.0.1:{} data={}",
-        g.chainId(),
-        r.height(),
-        n.gateway.port(),
-        p.dataDir());
+    LOG.atInfo()
+        .setMessage("node_start")
+        .addKeyValue("mode", "single-validator")
+        .addKeyValue("chainId", g.chainId())
+        .addKeyValue("height", r.height())
+        .addKeyValue("gatewayPort", n.gateway.port())
+        .addKeyValue("data", p.dataDir())
+        .log();
     return n;
   }
 
@@ -308,8 +313,15 @@ public final class Node implements AutoCloseable {
       n.gateway.onFinal(b.height(), b.commands(), b.results());
     }
     n.startThreads();
-    LOG.info(
-        "validator {} up at height {} with gateway 127.0.0.1:{}", me, r.height(), n.gateway.port());
+    LOG.atInfo()
+        .setMessage("node_start")
+        .addKeyValue("mode", "fixed-proposer")
+        .addKeyValue("validator", me)
+        .addKeyValue("chainId", g.chainId())
+        .addKeyValue("height", r.height())
+        .addKeyValue("gatewayPort", n.gateway.port())
+        .addKeyValue("data", p.dataDir())
+        .log();
     return n;
   }
 
@@ -349,7 +361,7 @@ public final class Node implements AutoCloseable {
       try {
         store.close();
       } catch (PersistenceException e) {
-        LOG.warn("closing block log: {}", e.toString());
+        LOG.atWarn().setMessage("close_failed").addKeyValue("error", e.toString()).log();
       }
     }
   }
@@ -409,9 +421,9 @@ public final class Node implements AutoCloseable {
       try {
         c.close();
       } catch (Exception e) {
-        LOG.warn("closing {}: {}", c, e.toString());
+        LOG.atWarn().setMessage("close_failed").addKeyValue("error", e.toString()).log();
       }
     }
-    LOG.info("node stopped at height {}", chain.height());
+    LOG.atInfo().setMessage("node_stop").addKeyValue("height", chain.height()).log();
   }
 }

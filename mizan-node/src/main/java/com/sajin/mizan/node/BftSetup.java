@@ -40,10 +40,46 @@ final class BftSetup {
     return out;
   }
 
-  /** Logs equivocation evidence and appends it to {@code dataDir/evidence.log}. */
-  static RoundBft.Observer evidenceLog(Path dataDir, int me) {
+  /**
+   * Consensus lifecycle log (M9-T2): round bumps, sync and peer bans as key-value events;
+   * equivocation evidence is logged and appended to {@code dataDir/evidence.log}.
+   */
+  static RoundBft.Observer consensusLog(Path dataDir, int me) {
     Path file = dataDir.resolve("evidence.log");
     return new RoundBft.Observer() {
+      @Override
+      public void roundStarted(long height, int round) {
+        if (round > 0) {
+          LOG.atInfo()
+              .setMessage("round_bump")
+              .addKeyValue("validator", me)
+              .addKeyValue("height", height)
+              .addKeyValue("round", round)
+              .log();
+        }
+      }
+
+      @Override
+      public void synced(int peer, long height, int blocks) {
+        LOG.atInfo()
+            .setMessage("synced")
+            .addKeyValue("validator", me)
+            .addKeyValue("peer", peer)
+            .addKeyValue("height", height)
+            .addKeyValue("blocks", blocks)
+            .log();
+      }
+
+      @Override
+      public void peerBanned(int peer, long untilMillis) {
+        LOG.atWarn()
+            .setMessage("peer_banned")
+            .addKeyValue("validator", me)
+            .addKeyValue("peer", peer)
+            .addKeyValue("untilMillis", untilMillis)
+            .log();
+      }
+
       @Override
       public void equivocation(
           int validator, long height, int round, String kind, byte[] a, byte[] b) {
@@ -51,7 +87,16 @@ final class BftSetup {
             String.format(
                 "%d validator=%d height=%d round=%d kind=%s first=%s second=%s seenBy=%d%n",
                 System.currentTimeMillis(), validator, height, round, kind, hex(a), hex(b), me);
-        LOG.warn("EQUIVOCATION {}", line.trim());
+        LOG.atWarn()
+            .setMessage("equivocation")
+            .addKeyValue("validator", validator)
+            .addKeyValue("height", height)
+            .addKeyValue("round", round)
+            .addKeyValue("kind", kind)
+            .addKeyValue("first", hex(a))
+            .addKeyValue("second", hex(b))
+            .addKeyValue("seenBy", me)
+            .log();
         try {
           Files.writeString(
               file,
@@ -60,7 +105,7 @@ final class BftSetup {
               StandardOpenOption.CREATE,
               StandardOpenOption.APPEND);
         } catch (IOException e) {
-          LOG.error("cannot write evidence log", e);
+          LOG.atError().setMessage("evidence_log_failed").setCause(e).log();
         }
       }
     };
@@ -117,7 +162,7 @@ final class BftSetup {
         store.close();
         safety.close();
       } catch (PersistenceException e) {
-        LOG.warn("closing block log: {}", e.toString());
+        LOG.atWarn().setMessage("close_failed").addKeyValue("error", e.toString()).log();
       }
     }
   }
@@ -151,7 +196,7 @@ final class BftSetup {
                 safety,
                 p.snapshotEvery(),
                 Math.max(200, g.consensus().proposeTimeoutMs() / 2),
-                metrics.observe(evidenceLog(p.dataDir(), me))),
+                metrics.observe(consensusLog(p.dataDir(), me))),
             recovered,
             store,
             snaps,

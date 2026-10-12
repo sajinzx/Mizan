@@ -50,7 +50,13 @@ public final class FollowerValidator implements AutoCloseable {
             (h, cmds, results) -> {},
             new NodeMetrics());
     chain.start(null);
-    LOG.info("validator {} up at height {} (follower)", me, r.height());
+    LOG.atInfo()
+        .setMessage("node_start")
+        .addKeyValue("mode", "follower")
+        .addKeyValue("validator", me)
+        .addKeyValue("height", r.height())
+        .addKeyValue("data", p.dataDir())
+        .log();
     return new FollowerValidator(chain);
   }
 

@@ -16,7 +16,7 @@ dependencies {
 
     testImplementation(project(":mizan-testkit"))
     testImplementation(libs.hdrhistogram)
-    testRuntimeOnly(libs.logback.classic)
+    testImplementation(libs.logback.classic)
 }
 
 application {

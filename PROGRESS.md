@@ -118,6 +118,7 @@ Note: M2 landed as one commit ("Milestone 2 completed") rather than one commit p
 
 ## M9
 - [x] M9-T1 Metrics: `core.Metrics` SPI (counters, timers, gauges; `NOOP` for tests). `NodeMetrics` keeps counters in `LongAdder`s and timers in HdrHistogram `Recorder`s. `mizan node|cluster --metrics-port` serves plain-text `/metrics` on loopback through the JDK `HttpServer`. Recorded: gateway ingest→ack and ingest→final, sequencer execute and cut→commit, consensus height latency, inbound/pool/awaiting depths, BUSY, pre-check rejects, rollbacks, REVOKEs, round bumps, equivocations, decisions. Tests: `MetricsTest` (quantiles, a live node scraped over HTTP), `SequencerTest` (rollback count, cut→commit time on the fake clock).
+- [x] M9-T2 Structured logging: the node, chain and net lifecycle use SLF4J 2 key-value events. The message is an event name (`node_start`, `recovered`, `node_stop`, `committed`, `round_bump`, `synced`, `peer_banned`, `equivocation`, `revoke`, `rollback`, `invalid_block`, `peer_link_up/down`, `consensus_halted`) and the details are pairs. TEXT format by default (`key="value"`); `-Dmizan.log.format=JSON` uses Logback's `JsonEncoder`. Empty blocks are logged at DEBUG only. `RoundBft.Observer` gained `synced`/`peerBanned`, so the simulator stays log-free; the engine still never logs (ArchUnit). Test: `LoggingTest`.
 
 ## M10
 See spec §8.

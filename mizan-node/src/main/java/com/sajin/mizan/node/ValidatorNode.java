@@ -150,7 +150,7 @@ public final class ValidatorNode implements AutoCloseable {
                 safety,
                 p.snapshotEvery(),
                 Math.max(200, g.consensus().proposeTimeoutMs() / 2),
-                metrics.observe(BftSetup.evidenceLog(p.dataDir(), me))),
+                metrics.observe(BftSetup.consensusLog(p.dataDir(), me))),
             r,
             store,
             snaps,
@@ -168,11 +168,16 @@ public final class ValidatorNode implements AutoCloseable {
     driver.start(net, null);
     hb.start();
     gateway.start();
-    LOG.info(
-        "validator {} up at height {} (rotating proposer), gateway 127.0.0.1:{}",
-        me,
-        r.height(),
-        gateway.port());
+    LOG.atInfo()
+        .setMessage("node_start")
+        .addKeyValue("mode", "rotating")
+        .addKeyValue("validator", me)
+        .addKeyValue("chainId", g.chainId())
+        .addKeyValue("height", r.height())
+        .addKeyValue("snapshot", r.snapshotHeight())
+        .addKeyValue("gatewayPort", gateway.port())
+        .addKeyValue("data", p.dataDir())
+        .log();
     return new ValidatorNode(driver, net, hb, gateway, md, store, safety, pool, metrics);
   }
 
@@ -230,7 +235,8 @@ public final class ValidatorNode implements AutoCloseable {
       store.close();
       safety.close();
     } catch (PersistenceException e) {
-      LOG.warn("closing storage: {}", e.toString());
+      LOG.atWarn().setMessage("close_failed").addKeyValue("error", e.toString()).log();
     }
+    LOG.atInfo().setMessage("node_stop").addKeyValue("height", driver.height()).log();
   }
 }

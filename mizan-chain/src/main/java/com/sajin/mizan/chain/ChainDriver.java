@@ -133,7 +133,7 @@ public final class ChainDriver implements Consumer<Sequencer.BlockDraft>, AutoCl
       Thread.currentThread().interrupt();
     } catch (PersistenceException | RuntimeException | Error e) {
       failure = e;
-      LOG.error("consensus thread halted", e);
+      LOG.atError().setMessage("consensus_halted").addKeyValue("height", height).setCause(e).log();
     }
   }
 
@@ -172,7 +172,11 @@ public final class ChainDriver implements Consumer<Sequencer.BlockDraft>, AutoCl
 
   private void rollback(String why) {
     epoch++;
-    LOG.warn("rolling back uncommitted drafts after height {}: {}", height, why);
+    LOG.atWarn()
+        .setMessage("rollback")
+        .addKeyValue("height", height)
+        .addKeyValue("reason", why)
+        .log();
     while (!sequencer.control(new Sequencer.Rollback(committed.copy(), List.of()))) {
       Thread.onSpinWait();
     }
