@@ -39,6 +39,12 @@ public final class Main implements Callable<Integer> {
         description = "In-memory node with the public dev genesis (no persistence).")
     boolean dev;
 
+    @Option(
+        names = "--md-port",
+        defaultValue = "9001",
+        description = "UDP market-data port (-1 = off).")
+    int mdPort;
+
     @Override
     public Integer call() throws Exception {
       if (!dev) {
@@ -46,7 +52,9 @@ public final class Main implements Callable<Integer> {
             "only --dev is available in this build; persistent nodes arrive with M6");
         return 2;
       }
-      Node node = Node.startInMemory(Node.Settings.dev(DevGenesis.config(), port), List.of());
+      Node node =
+          Node.startInMemory(
+              Node.Settings.dev(DevGenesis.config(), port).withMarketData(mdPort), List.of());
       CountDownLatch done = new CountDownLatch(1);
       Runtime.getRuntime()
           .addShutdownHook(
@@ -56,7 +64,11 @@ public final class Main implements Callable<Integer> {
                     done.countDown();
                   },
                   "shutdown"));
-      System.out.println("listening on 127.0.0.1:" + node.gatewayPort());
+      System.out.println(
+          "gateway 127.0.0.1:"
+              + node.gatewayPort()
+              + "  market data udp 127.0.0.1:"
+              + node.marketDataPort());
       done.await();
       return 0;
     }

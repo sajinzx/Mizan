@@ -9,6 +9,7 @@ import com.sajin.mizan.engine.ExecutionCore;
 import com.sajin.mizan.engine.Sequencer;
 import com.sajin.mizan.net.ResultCache;
 import com.sajin.mizan.net.TcpGateway;
+import com.sajin.mizan.net.md.MarketDataService;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,14 +34,30 @@ public final class Node implements AutoCloseable {
       GenesisConfig genesis,
       TcpGateway.Config gateway,
       Sequencer.Config sequencer,
-      boolean gatewayPreCheck) {
+      boolean gatewayPreCheck,
+      int marketDataPort,
+      int resultCacheCapacity) {
+    /** Gateway on {@code port}, pre-check on, market data disabled. */
     public static Settings dev(GenesisConfig g, int port) {
       return new Settings(
           g,
           TcpGateway.Config.defaults(port),
           Sequencer.Config.of(
               g.block().maxCommands(), g.block().maxIntervalMs(), g.block().maxInflight()),
-          true);
+          true,
+          -1,
+          1 << 20);
+    }
+
+    /** Enables UDP market data on {@code udpPort} ({@code 0} = ephemeral). */
+    public Settings withMarketData(int udpPort) {
+      return new Settings(
+          genesis, gateway, sequencer, gatewayPreCheck, udpPort, resultCacheCapacity);
+    }
+
+    /** Bounds the gateway's result cache (total entries across accounts). */
+    public Settings withResultCache(int capacity) {
+      return new Settings(genesis, gateway, sequencer, gatewayPreCheck, marketDataPort, capacity);
     }
   }
 
@@ -50,15 +67,16 @@ public final class Node implements AutoCloseable {
   private final InstantChain chain;
   private final Sequencer sequencer;
   private final TcpGateway gateway;
+  private final MarketDataService marketData;
 
-  private Node(Settings s, List<EngineListener> extraListeners) {
+  private Node(Settings s, List<EngineListener> extraListeners) throws IOException {
     this.settings = s;
     this.verifier = new CachingVerifier(SignatureVerifier.ed25519());
     ExecutionCore genesisCore = ExecutionCore.genesis(s.genesis(), verifier);
     this.committed = genesisCore.copy();
     SignaturePreCheck preCheck = new SignaturePreCheck(verifier);
     preCheck.learn(Accounts.ADMIN_ACCOUNT, s.genesis().adminPubKey());
-    ResultCache cache = ResultCache.withDefaults();
+    ResultCache cache = new ResultCache(1024, s.resultCacheCapacity());
     // The gateway needs the sequencer as its sink, and the sequencer needs the gateway as a
     // listener: break the cycle with a forwarding sink.
     Sequencer[] seqRef = new Sequencer[1];
@@ -71,6 +89,15 @@ public final class Node implements AutoCloseable {
     this.chain = new InstantChain(committed, gateway);
     List<EngineListener> engineListeners = new ArrayList<>();
     engineListeners.add(gateway);
+    if (s.marketDataPort() >= 0) {
+      List<Integer> instruments = new ArrayList<>();
+      s.genesis().instruments().forEach(i -> instruments.add(i.id()));
+      this.marketData = new MarketDataService(1 << 16, s.marketDataPort(), 500, instruments);
+      engineListeners.add(marketData);
+      gateway.setSnapshotProvider(marketData::snapshot);
+    } else {
+      this.marketData = null;
+    }
     engineListeners.addAll(extraListeners);
     this.sequencer =
         new Sequencer(
@@ -99,6 +126,11 @@ public final class Node implements AutoCloseable {
 
   public int gatewayPort() {
     return gateway.port();
+  }
+
+  /** UDP market-data port, or {@code -1} if disabled. */
+  public int marketDataPort() {
+    return marketData == null ? -1 : marketData.udpPort();
   }
 
   public TcpGateway gateway() {
@@ -134,6 +166,9 @@ public final class Node implements AutoCloseable {
       Thread.currentThread().interrupt();
     }
     chain.close();
+    if (marketData != null) {
+      marketData.close();
+    }
     LOG.info("node stopped at height {}", chain.height());
   }
 }

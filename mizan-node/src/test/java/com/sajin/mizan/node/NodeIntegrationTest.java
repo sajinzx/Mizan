@@ -140,7 +140,9 @@ class NodeIntegrationTest {
             g,
             TcpGateway.Config.defaults(0).withLimits(1_000_000, 1_000_000),
             new Sequencer.Config(64, 1 << 10, 50, 5_000_000L, 1),
-            false); // no gateway pre-check: the engine's own verification is the bottleneck
+            false, // no gateway pre-check: the engine's own verification is the bottleneck
+            -1, // market data off
+            1 << 20);
     try (Node node = Node.startInMemory(s, List.of())) {
       var p = LoadGenerator.Params.of("127.0.0.1", node.gatewayPort(), 10, 0, 300, 3);
       LoadGenerator.setup(p);
