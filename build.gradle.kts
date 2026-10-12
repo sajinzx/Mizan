@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.spotless) apply false
     alias(libs.plugins.errorprone) apply false
     alias(libs.plugins.jmh) apply false
+    alias(libs.plugins.javafx) apply false
 }
 
 // ---------------------------------------------------------------------------------------------
