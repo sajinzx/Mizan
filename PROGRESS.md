@@ -116,7 +116,10 @@ Note: M2 landed as one commit ("Milestone 2 completed") rather than one commit p
 
 **Gate M8 (2026-10-12): passed.** `./gradlew :mizan-sim:simSweep -Pseeds=1000` on the final code: fault matrix 1,000 seeds × {PROPOSER_CRASH, PARTITION_2_2, LATE_JOINER, LOSS, BYZANTINE}, all passed; proposer-crash delays covered {0, 1, 2, 3, 5, 8, 12} ms (123–160 runs each); late joiners synced 9,560 blocks in total. The M7 sweep rerun in the same build also passed (1,000 × 5; 88,138 equivocations logged; message counts differ from the M7 run because block pacing changed). `RotatingClusterTest`: 160 client FINALs, each equal to the chain's (height, order id); all 4 replicas have the same head at the common height.
 
-## M9–M10
+## M9
+- [x] M9-T1 Metrics: `core.Metrics` SPI (counters, timers, gauges; `NOOP` for tests). `NodeMetrics` keeps counters in `LongAdder`s and timers in HdrHistogram `Recorder`s. `mizan node|cluster --metrics-port` serves plain-text `/metrics` on loopback through the JDK `HttpServer`. Recorded: gateway ingest→ack and ingest→final, sequencer execute and cut→commit, consensus height latency, inbound/pool/awaiting depths, BUSY, pre-check rejects, rollbacks, REVOKEs, round bumps, equivocations, decisions. Tests: `MetricsTest` (quantiles, a live node scraped over HTTP), `SequencerTest` (rollback count, cut→commit time on the fake clock).
+
+## M10
 See spec §8.
 
 ## Known issues / deferred

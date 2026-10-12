@@ -133,7 +133,8 @@ final class BftSetup {
       Recovery.Recovered recovered,
       BlockStore store,
       SnapshotStore snaps,
-      FinalityListener finality) {
+      FinalityListener finality,
+      NodeMetrics metrics) {
     BftDriver[] ref = new BftDriver[1];
     WalSafetyStore safety =
         new WalSafetyStore(new ConsensusWal(p.dataDir().resolve("consensus.wal")));
@@ -150,7 +151,7 @@ final class BftSetup {
                 safety,
                 p.snapshotEvery(),
                 Math.max(200, g.consensus().proposeTimeoutMs() / 2),
-                evidenceLog(p.dataDir(), me)),
+                metrics.observe(evidenceLog(p.dataDir(), me))),
             recovered,
             store,
             snaps,

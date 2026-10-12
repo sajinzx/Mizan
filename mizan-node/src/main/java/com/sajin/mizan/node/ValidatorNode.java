@@ -10,6 +10,7 @@ import com.sajin.mizan.core.Accounts;
 import com.sajin.mizan.core.EngineListener;
 import com.sajin.mizan.core.FinalityListener;
 import com.sajin.mizan.core.GenesisConfig;
+import com.sajin.mizan.core.Metrics;
 import com.sajin.mizan.core.PersistenceException;
 import com.sajin.mizan.crypto.CachingVerifier;
 import com.sajin.mizan.crypto.SignatureVerifier;
@@ -56,6 +57,7 @@ public final class ValidatorNode implements AutoCloseable {
   private final BlockStore store;
   private final WalSafetyStore safety;
   private final CommandPool pool;
+  private final NodeMetrics metrics;
 
   private ValidatorNode(
       BftDriver driver,
@@ -65,7 +67,8 @@ public final class ValidatorNode implements AutoCloseable {
       MarketDataService marketData,
       BlockStore store,
       WalSafetyStore safety,
-      CommandPool pool) {
+      CommandPool pool,
+      NodeMetrics metrics) {
     this.driver = driver;
     this.network = network;
     this.heartbeat = heartbeat;
@@ -74,6 +77,7 @@ public final class ValidatorNode implements AutoCloseable {
     this.store = store;
     this.safety = safety;
     this.pool = pool;
+    this.metrics = metrics;
   }
 
   public static ValidatorNode start(
@@ -89,6 +93,9 @@ public final class ValidatorNode implements AutoCloseable {
     WalSafetyStore safety =
         new WalSafetyStore(new ConsensusWal(p.dataDir().resolve("consensus.wal")));
     CommandPool pool = new CommandPool(100_000);
+    NodeMetrics metrics = new NodeMetrics();
+    metrics.gauge("pool_depth", pool::size);
+    Metrics.Counter poolFull = metrics.counter("pool_full");
 
     SignaturePreCheck preCheck = new SignaturePreCheck(v);
     preCheck.learn(Accounts.ADMIN_ACCOUNT, g.adminPubKey());
@@ -100,6 +107,7 @@ public final class ValidatorNode implements AutoCloseable {
             c -> {
               switch (pool.add(c, true, System.currentTimeMillis())) {
                 case FULL -> {
+                  poolFull.inc();
                   return false; // BUSY
                 }
                 case NEW -> {
@@ -112,7 +120,8 @@ public final class ValidatorNode implements AutoCloseable {
             },
             s.gatewayPreCheck() ? preCheck : TcpGateway.PreCheck.ACCEPT_ALL,
             new ResultCache(1024, s.resultCacheCapacity()),
-            s.gateway());
+            s.gateway(),
+            metrics);
 
     List<EngineListener> committedListeners = new ArrayList<>();
     committedListeners.add(gateway);
@@ -125,6 +134,7 @@ public final class ValidatorNode implements AutoCloseable {
       gateway.setSnapshotProvider(md::snapshot);
     }
     committedListeners.addAll(extraCommitted);
+    committedListeners.add(revokeCounter(metrics.counter("revokes")));
     FinalityListener finality = Listeners.finality(List.of(preCheck, gateway));
 
     TcpNetwork net =
@@ -140,13 +150,14 @@ public final class ValidatorNode implements AutoCloseable {
                 safety,
                 p.snapshotEvery(),
                 Math.max(200, g.consensus().proposeTimeoutMs() / 2),
-                BftSetup.evidenceLog(p.dataDir(), me)),
+                metrics.observe(BftSetup.evidenceLog(p.dataDir(), me))),
             r,
             store,
             snaps,
             finality,
             new BftDriver.Rotation(pool, gateway, Listeners.engine(committedListeners), 1_000));
     ref[0] = driver;
+    metrics.gauge("chain_height", driver::height);
     UdpHeartbeat hb =
         new UdpHeartbeat(
             me, BftSetup.peers(g), driver::height, driver::headHash, driver::onPeerHeight, 500, 0);
@@ -162,7 +173,23 @@ public final class ValidatorNode implements AutoCloseable {
         me,
         r.height(),
         gateway.port());
-    return new ValidatorNode(driver, net, hb, gateway, md, store, safety, pool);
+    return new ValidatorNode(driver, net, hb, gateway, md, store, safety, pool, metrics);
+  }
+
+  private static EngineListener revokeCounter(Metrics.Counter revokes) {
+    return new EngineListener() {
+      @Override
+      public void onTrade(com.sajin.mizan.core.Trade t) {}
+
+      @Override
+      public void onRevoke(long fromTradeSeq) {
+        revokes.inc();
+      }
+    };
+  }
+
+  public NodeMetrics metrics() {
+    return metrics;
   }
 
   public int gatewayPort() {

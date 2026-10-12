@@ -37,7 +37,18 @@ public final class FollowerValidator implements AutoCloseable {
     SnapshotStore snaps = new SnapshotStore(p.dataDir().resolve("snapshots"), p.keepSnapshots());
     Recovery.Recovered r = Recovery.recover(g, v, store, snaps, 1);
     BftSetup.BftChain chain =
-        BftSetup.build(g, p, key, me, proposer, v, r, store, snaps, (h, cmds, results) -> {});
+        BftSetup.build(
+            g,
+            p,
+            key,
+            me,
+            proposer,
+            v,
+            r,
+            store,
+            snaps,
+            (h, cmds, results) -> {},
+            new NodeMetrics());
     chain.start(null);
     LOG.info("validator {} up at height {} (follower)", me, r.height());
     return new FollowerValidator(chain);

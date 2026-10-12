@@ -101,6 +101,7 @@ public final class Node implements AutoCloseable {
   }
 
   private final Settings settings;
+  private final NodeMetrics metrics;
   private final CachingVerifier verifier;
   private final ChainLayer chain;
   private final Sequencer sequencer;
@@ -110,6 +111,7 @@ public final class Node implements AutoCloseable {
 
   private Node(
       Settings s,
+      NodeMetrics metrics,
       CachingVerifier verifier,
       ExecutionCore committedStart,
       Function<FinalityListener, ChainLayer> chainFactory,
@@ -117,6 +119,7 @@ public final class Node implements AutoCloseable {
       List<FinalityListener> extraFinality)
       throws IOException {
     this.settings = s;
+    this.metrics = metrics;
     this.verifier = verifier;
     SignaturePreCheck preCheck = new SignaturePreCheck(verifier);
     preCheck.learn(Accounts.ADMIN_ACCOUNT, s.genesis().adminPubKey());
@@ -130,7 +133,8 @@ public final class Node implements AutoCloseable {
             c -> seqRef[0].submit(c),
             s.gatewayPreCheck() ? preCheck : TcpGateway.PreCheck.ACCEPT_ALL,
             cache,
-            s.gateway());
+            s.gateway(),
+            metrics);
     List<FinalityListener> finals = new ArrayList<>();
     finals.add(gateway);
     finals.addAll(extraFinality);
@@ -154,8 +158,10 @@ public final class Node implements AutoCloseable {
             Listeners.results(List.of(preCheck, gateway)),
             chain,
             s.sequencer(),
-            System::nanoTime);
+            System::nanoTime,
+            metrics);
     seqRef[0] = sequencer;
+    metrics.gauge("chain_height", chain::height);
   }
 
   private void startThreads() throws IOException {
@@ -171,7 +177,13 @@ public final class Node implements AutoCloseable {
     ExecutionCore genesis = ExecutionCore.genesis(s.genesis(), v);
     Node n =
         new Node(
-            s, v, genesis, f -> new InstantChain(genesis.copy(), f), extraListeners, List.of());
+            s,
+            new NodeMetrics(),
+            v,
+            genesis,
+            f -> new InstantChain(genesis.copy(), f),
+            extraListeners,
+            List.of());
     n.startThreads();
     LOG.info(
         "node up: chainId={} gateway=127.0.0.1:{} (in-memory, instant commit)",
@@ -210,6 +222,7 @@ public final class Node implements AutoCloseable {
     Node n =
         new Node(
             s,
+            new NodeMetrics(),
             v,
             r.committed(),
             f ->
@@ -281,12 +294,14 @@ public final class Node implements AutoCloseable {
     BlockStore store = BlockStore.open(p.dataDir().resolve("blocks.log"));
     SnapshotStore snaps = new SnapshotStore(p.dataDir().resolve("snapshots"), p.keepSnapshots());
     Recovery.Recovered r = Recovery.recover(g, v, store, snaps, 64);
+    NodeMetrics metrics = new NodeMetrics();
     Node n =
         new Node(
             bft,
+            metrics,
             v,
             r.committed(),
-            f -> BftSetup.build(g, p, validatorKey, me, proposer, v, r, store, snaps, f),
+            f -> BftSetup.build(g, p, validatorKey, me, proposer, v, r, store, snaps, f, metrics),
             extraListeners,
             extraFinality);
     for (Recovery.Replayed b : r.recent()) {
@@ -367,6 +382,10 @@ public final class Node implements AutoCloseable {
 
   public Settings settings() {
     return settings;
+  }
+
+  public NodeMetrics metrics() {
+    return metrics;
   }
 
   /** Closes {@code c} when the node closes (after the core components). */

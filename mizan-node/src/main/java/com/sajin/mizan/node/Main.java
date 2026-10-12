@@ -64,6 +64,12 @@ public final class Main implements Callable<Integer> {
     String key;
 
     @Option(
+        names = "--metrics-port",
+        defaultValue = "-1",
+        description = "Serve plain-text /metrics on 127.0.0.1 at this port (-1 = off).")
+    int metricsPort;
+
+    @Option(
         names = "--snapshot-every",
         defaultValue = "100",
         description = "Blocks between snapshots.")
@@ -89,6 +95,9 @@ public final class Main implements Callable<Integer> {
                 KeyFiles.load(key),
                 List.of(),
                 List.of());
+      }
+      if (metricsPort >= 0) {
+        node.closeWith(MetricsServer.start(metricsPort, node.metrics()::render));
       }
       CountDownLatch done = new CountDownLatch(1);
       Runtime.getRuntime()
@@ -137,6 +146,13 @@ public final class Main implements Callable<Integer> {
     int mdPort;
 
     @Option(
+        names = "--metrics-port",
+        defaultValue = "-1",
+        description =
+            "Serve plain-text /metrics on 127.0.0.1 at this port (-1 = off); validator i uses port + i.")
+    int metricsPort;
+
+    @Option(
         names = "--fixed-proposer",
         description = "M7 mode: validator 0 is the only proposer and hosts the only gateway.")
     boolean fixedProposer;
@@ -161,6 +177,9 @@ public final class Main implements Callable<Integer> {
                 List.of(),
                 List.of());
         running.add(leader);
+        if (metricsPort >= 0) {
+          leader.closeWith(MetricsServer.start(metricsPort, leader.metrics()::render));
+        }
         ports.append("gateway 127.0.0.1:").append(leader.gatewayPort());
         for (int i = 1; i < nodes; i++) {
           running.add(
@@ -181,6 +200,9 @@ public final class Main implements Callable<Integer> {
                   i,
                   List.of());
           running.add(v);
+          if (metricsPort >= 0) {
+            running.add(MetricsServer.start(metricsPort + i, v.metrics()::render));
+          }
           ports.append(i == 0 ? "gateways " : ", ").append("127.0.0.1:").append(v.gatewayPort());
         }
       }

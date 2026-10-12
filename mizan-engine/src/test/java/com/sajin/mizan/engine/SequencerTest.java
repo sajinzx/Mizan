@@ -6,6 +6,7 @@ import com.sajin.mizan.core.Accounts;
 import com.sajin.mizan.core.Deposit;
 import com.sajin.mizan.core.ExecResult;
 import com.sajin.mizan.core.ExecResult.Status;
+import com.sajin.mizan.core.Metrics;
 import com.sajin.mizan.core.OrderType;
 import com.sajin.mizan.core.Place;
 import com.sajin.mizan.core.Register;
@@ -18,12 +19,15 @@ import com.sajin.mizan.testkit.RecordingListener;
 import com.sajin.mizan.testkit.SignedCommands;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.LongSupplier;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -67,6 +71,8 @@ class SequencerTest {
     final List<ExecResult> results = new ArrayList<>();
     final RecordingListener events = new RecordingListener();
     final ExecutionCore initial;
+    final Map<String, Long> counts = new HashMap<>();
+    final Map<String, List<Long>> times = new HashMap<>();
     final Sequencer seq;
 
     Harness(ExecutionCore core, Sequencer.Config config) {
@@ -81,7 +87,21 @@ class SequencerTest {
               },
               drafts::add,
               config,
-              now::get);
+              now::get,
+              new Metrics() {
+                @Override
+                public Counter counter(String name) {
+                  return n -> counts.merge(name, n, Long::sum);
+                }
+
+                @Override
+                public Timer timer(String name) {
+                  return nanos -> times.computeIfAbsent(name, k -> new ArrayList<>()).add(nanos);
+                }
+
+                @Override
+                public void gauge(String name, LongSupplier value) {}
+              });
     }
 
     void submitAll(List<SignedCommand> cs) {
@@ -227,7 +247,10 @@ class SequencerTest {
     assertThat(h.drafts).hasSize(1);
     ExecutionCore committed = h.initial.copy();
     h.drafts.get(0).commands().forEach(c -> committed.execute(c, ExecutionCore.SILENT));
+    h.now.addAndGet(3 * MS);
     h.seq.control(new Sequencer.Committed(1));
+    h.drain();
+    assertThat(h.times.get("sequencer_cut_to_commit")).containsExactly(3 * MS);
     // Draft 2 (trade seq 2) in flight, plus one pending command.
     h.submitAll(
         List.of(
@@ -250,6 +273,8 @@ class SequencerTest {
     toReplay.forEach(c -> expected.execute(c, ExecutionCore.SILENT));
     assertThat(h.seq.speculative().stateRoot()).isEqualTo(expected.stateRoot());
     assertThat(h.seq.epoch()).isEqualTo(1);
+    assertThat(h.counts).containsEntry("sequencer_rollbacks", 1L);
+    assertThat(h.times.get("sequencer_execute")).hasSize(5 + toReplay.size());
     h.now.addAndGet(10 * MS);
     h.drain();
     assertThat(h.drafts.get(h.drafts.size() - 1).epoch()).isEqualTo(1);

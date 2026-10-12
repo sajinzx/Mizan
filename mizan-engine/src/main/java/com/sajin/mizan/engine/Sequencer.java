@@ -4,6 +4,7 @@ import com.sajin.mizan.core.CommandSink;
 import com.sajin.mizan.core.EngineListener;
 import com.sajin.mizan.core.ExecResult;
 import com.sajin.mizan.core.InvariantViolationError;
+import com.sajin.mizan.core.Metrics;
 import com.sajin.mizan.core.ResultListener;
 import com.sajin.mizan.core.SignedCommand;
 import java.util.ArrayDeque;
@@ -99,6 +100,9 @@ public final class Sequencer implements CommandSink {
   private final Consumer<BlockDraft> drafts;
   private final Config config;
   private final LongSupplier nanoClock;
+  private final Metrics.Timer executeTimer;
+  private final Metrics.Timer cutToCommit;
+  private final Metrics.Counter rollbacks;
 
   // ---- owned by the sequencer thread ----
   private ExecutionCore speculative;
@@ -106,6 +110,7 @@ public final class Sequencer implements CommandSink {
   private long pendingFirstTradeSeq;
   private long pendingSinceNanos;
   private final ArrayDeque<BlockDraft> inflight = new ArrayDeque<>();
+  private final ArrayDeque<Long> inflightCutNanos = new ArrayDeque<>();
   private final ArrayDeque<SignedCommand> replay = new ArrayDeque<>();
   private long executed;
   private long epoch;
@@ -120,6 +125,17 @@ public final class Sequencer implements CommandSink {
       Consumer<BlockDraft> drafts,
       Config config,
       LongSupplier nanoClock) {
+    this(speculative, listener, results, drafts, config, nanoClock, Metrics.NOOP);
+  }
+
+  public Sequencer(
+      ExecutionCore speculative,
+      EngineListener listener,
+      ResultListener results,
+      Consumer<BlockDraft> drafts,
+      Config config,
+      LongSupplier nanoClock,
+      Metrics metrics) {
     this.speculative = Objects.requireNonNull(speculative, "speculative");
     this.listener = Objects.requireNonNull(listener, "listener");
     this.results = Objects.requireNonNull(results, "results");
@@ -129,6 +145,10 @@ public final class Sequencer implements CommandSink {
     this.inbound = new ManyToOneConcurrentArrayQueue<>(config.inboundCapacity());
     this.control = new ManyToOneConcurrentArrayQueue<>(config.controlCapacity());
     this.pendingFirstTradeSeq = speculative.nextTradeSeq();
+    this.executeTimer = metrics.timer("sequencer_execute");
+    this.cutToCommit = metrics.timer("sequencer_cut_to_commit");
+    this.rollbacks = metrics.counter("sequencer_rollbacks");
+    metrics.gauge("sequencer_inbound_depth", inbound::size);
   }
 
   // ------------------------------------------------------------------ any thread
@@ -208,7 +228,9 @@ public final class Sequencer implements CommandSink {
 
   private void executeAndAppend(SignedCommand c) {
     long seqBefore = speculative.nextTradeSeq();
+    long t0 = nanoClock.getAsLong();
     ExecResult r = speculative.execute(c, listener);
+    executeTimer.recordNanos(nanoClock.getAsLong() - t0);
     executed++;
     results.onResult(c, r);
     if (r.status() != ExecResult.Status.AUTH_FAILED) { // defect 1
@@ -233,6 +255,7 @@ public final class Sequencer implements CommandSink {
         new BlockDraft(epoch, pendingFirstTradeSeq, pending, speculative.stateRoot());
     pending.clear();
     inflight.addLast(draft);
+    inflightCutNanos.addLast(nanoClock.getAsLong());
     drafts.accept(draft);
     return true;
   }
@@ -243,6 +266,7 @@ public final class Sequencer implements CommandSink {
         if (inflight.pollFirst() == null) {
           throw new InvariantViolationError("commit at height " + c.height() + " with no draft");
         }
+        cutToCommit.recordNanos(nanoClock.getAsLong() - inflightCutNanos.pollFirst());
       }
       case Rollback r -> {
         long from =
@@ -255,6 +279,8 @@ public final class Sequencer implements CommandSink {
         again.addAll(replay); // a previous rollback's replay not yet finished
         again.addAll(r.toReplay());
         inflight.clear();
+        inflightCutNanos.clear();
+        rollbacks.inc();
         pending.clear();
         replay.clear();
         replay.addAll(again); // re-executed by doWork, under the same batch bound

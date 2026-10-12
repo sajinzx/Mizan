@@ -5,6 +5,7 @@ import com.sajin.mizan.core.CommandSink;
 import com.sajin.mizan.core.EngineListener;
 import com.sajin.mizan.core.ExecResult;
 import com.sajin.mizan.core.FinalityListener;
+import com.sajin.mizan.core.Metrics;
 import com.sajin.mizan.core.ProtocolException;
 import com.sajin.mizan.core.ResultListener;
 import com.sajin.mizan.core.SignedCommand;
@@ -152,6 +153,9 @@ public final class TcpGateway
 
   private record Key(long account, long nonce) {}
 
+  /** Bound on in-flight latency timestamps (commands lost with their connection never finish). */
+  private static final int MAX_TIMED = 100_000;
+
   private final CommandSink sink;
   private final PreCheck preCheck;
   private final ResultCache cache;
@@ -159,6 +163,11 @@ public final class TcpGateway
   private final Semaphore slots;
   private final Set<Conn> conns = ConcurrentHashMap.newKeySet();
   private final ConcurrentHashMap<Key, Conn> awaiting = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<Key, Long> ingestNanos = new ConcurrentHashMap<>();
+  private final Metrics.Timer ingestToAck;
+  private final Metrics.Timer ingestToFinal;
+  private final Metrics.Counter busy;
+  private final Metrics.Counter preCheckRejected;
   private final ConcurrentHashMap<Long, Set<Conn>> byAccount = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<Long, TokenBucket> accountBuckets = new ConcurrentHashMap<>();
   private final AtomicLong connectionIds = new AtomicLong();
@@ -168,11 +177,22 @@ public final class TcpGateway
   private Thread acceptor;
 
   public TcpGateway(CommandSink sink, PreCheck preCheck, ResultCache cache, Config config) {
+    this(sink, preCheck, cache, config, Metrics.NOOP);
+  }
+
+  public TcpGateway(
+      CommandSink sink, PreCheck preCheck, ResultCache cache, Config config, Metrics metrics) {
     this.sink = Objects.requireNonNull(sink, "sink");
     this.preCheck = Objects.requireNonNull(preCheck, "preCheck");
     this.cache = Objects.requireNonNull(cache, "cache");
     this.config = Objects.requireNonNull(config, "config");
     this.slots = new Semaphore(config.maxConnections());
+    this.ingestToAck = metrics.timer("gateway_ingest_to_ack");
+    this.ingestToFinal = metrics.timer("gateway_ingest_to_final");
+    this.busy = metrics.counter("gateway_busy");
+    this.preCheckRejected = metrics.counter("gateway_precheck_rejected");
+    metrics.gauge("gateway_connections", conns::size);
+    metrics.gauge("gateway_awaiting", awaiting::size);
   }
 
   /** Supplies {@code SNAPSHOT} payloads for {@code SNAPSHOT_REQ} (market data, M5). */
@@ -233,6 +253,10 @@ public final class TcpGateway
   public void onResult(SignedCommand c, ExecResult r) {
     Key k = new Key(c.accountId(), c.nonce());
     Conn conn = awaiting.get(k);
+    Long t0 = ingestNanos.get(k);
+    if (t0 != null) {
+      ingestToAck.recordNanos(System.nanoTime() - t0);
+    }
     switch (r.status()) {
       case ACCEPTED -> {
         cache.put(k.account(), k.nonce(), provisional(r.orderId()));
@@ -249,6 +273,7 @@ public final class TcpGateway
         // Not executed and never in a block. If an earlier submission with the same key was
         // executed, answer with that outcome; never cache the auth failure itself.
         awaiting.remove(k, conn);
+        ingestNanos.remove(k);
         ResultCache.Entry earlier = cache.get(k.account(), k.nonce());
         send(
             conn,
@@ -273,7 +298,12 @@ public final class TcpGateway
           c.nonce(),
           new ResultCache.Entry(
               ResultCache.State.FINAL, r.orderId(), r.reasonCode(), r.reason(), height, status));
-      Conn conn = awaiting.remove(new Key(c.accountId(), c.nonce()));
+      Key k = new Key(c.accountId(), c.nonce());
+      Conn conn = awaiting.remove(k);
+      Long t0 = ingestNanos.remove(k);
+      if (t0 != null) {
+        ingestToFinal.recordNanos(System.nanoTime() - t0);
+      }
       send(conn, new Messages.Final(c.accountId(), c.nonce(), height, status, r.orderId()));
     }
   }
@@ -502,10 +532,12 @@ public final class TcpGateway
               account,
               a -> new TokenBucket(config.accountRate(), config.accountBurst(), System::nanoTime));
       if (!bucket.tryAcquire() || !perAccount.tryAcquire()) {
+        busy.inc();
         ack(new Messages.Busy(account, c.nonce()).encode());
         return;
       }
       if (!preCheck.ok(c)) {
+        preCheckRejected.inc();
         ack(
             new Messages.Rejected(
                     account, c.nonce(), Messages.REASON_PRECHECK, "signature pre-check failed")
@@ -514,8 +546,13 @@ public final class TcpGateway
       }
       Key k = new Key(account, c.nonce());
       awaiting.put(k, this);
+      if (ingestNanos.size() < MAX_TIMED) {
+        ingestNanos.put(k, System.nanoTime());
+      }
       if (!sink.submit(c)) {
         awaiting.remove(k, this);
+        ingestNanos.remove(k);
+        busy.inc();
         ack(new Messages.Busy(account, c.nonce()).encode());
       }
     }
