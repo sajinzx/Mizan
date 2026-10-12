@@ -124,6 +124,7 @@ Note: M2 landed as one commit ("Milestone 2 completed") rather than one commit p
   - The market-data subscriber map had no size cap (now 1,024).
 
   Also added: `SecurityRulesTest` (ArchUnit over all production classes: no Java serialization, no reflection or process execution), Dependabot plus dependency-graph submission, and planted regressions "peer auth" and "md subscriber cap" (both detected). A 200-seed sweep of both matrices passes with the sync rate limit.
+- [x] M9-T3 (part 2) `docs/runbook.md`: start modes, keys and faucet, data-directory files (what is never safe to delete), health checks via metrics and logs, and procedures (restart, verify, corruption, wrong genesis, root mismatch, validator down, evidence, backups).
 - [x] M9-T4 Tools:
   - `mizan verify-chain --data --genesis` is read-only (`BlockStore.openReadOnly`, `SnapshotStore.readAllValid`). `ChainVerifier` replays from genesis with the same per-block checks as recovery (extracted into `Recovery.readLinked`/`applyCertified`): links, txRoot, certificates and state roots. It also checks every snapshot against the replayed chain.
   - `mizan keygen --out` never overwrites a file.

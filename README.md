@@ -22,7 +22,7 @@ Randomized tests print `SEED=<n>` and a replay command on failure. Re-run with `
 - [Implementation spec](implementation-claude-code.md): design, contracts, milestones, gates
 - [Progress](PROGRESS.md)
 - [Assumptions](docs/assumptions.md)
-- [Consensus protocol](docs/protocol.md) · [Threat model](docs/threat-model.md) · [Benchmark baseline](docs/bench/baseline.md)
+- [Consensus protocol](docs/protocol.md) · [Threat model](docs/threat-model.md) · [Runbook](docs/runbook.md) · [Benchmark baseline](docs/bench/baseline.md)
 - Architecture decisions:
   - [0001 Single-writer sequencer](docs/adr/0001-single-writer.md)
   - [0002 Block log is the WAL](docs/adr/0002-block-log-is-wal.md)
