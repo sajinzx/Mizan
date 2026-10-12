@@ -31,7 +31,11 @@ class SoakTest {
     long seconds = Long.getLong("mizan.soakSeconds", 600);
     MemoryMXBean mem = ManagementFactory.getMemoryMXBean();
     int threadsBefore = Thread.activeCount();
-    Node node = NodeIntegrationTest.start();
+    // A small result cache and IOC-only orders make every bounded structure fill early, so any
+    // further heap growth would be a leak rather than legitimate retained state.
+    Node node =
+        Node.startInMemory(
+            Node.Settings.dev(NodeIntegrationTest.G, 0).withResultCache(50_000), List.of());
     List<Long> heap = new ArrayList<>();
     long rounds = 0;
     long orders = 0;
@@ -40,7 +44,9 @@ class SoakTest {
       long nextSample = 0;
       long account = 10_000;
       while (System.nanoTime() < end) {
-        var p = LoadGenerator.Params.of("127.0.0.1", node.gatewayPort(), 20, 200, account, rounds);
+        var p =
+            LoadGenerator.Params.of("127.0.0.1", node.gatewayPort(), 20, 200, account, rounds)
+                .asIocOnly();
         LoadGenerator.setup(p);
         LoadGenerator.Result r = LoadGenerator.run(p);
         assertThat(r.errors()).isZero();
@@ -76,9 +82,9 @@ class SoakTest {
             .mapToLong(Long::longValue)
             .average()
             .orElseThrow();
-    // Retained state grows a little (accounts, resting orders, result cache entries); a leak would
-    // grow without bound. Allow 64 MiB of legitimate growth.
-    assertThat(late).isLessThan(early + 64.0 * 1024 * 1024);
+    // Accounts still accumulate (20 per round, a few hundred bytes each across both cores and the
+    // gateway); allow 32 MiB for that. A leak proportional to orders would exceed it many times.
+    assertThat(late).isLessThan(early + 32.0 * 1024 * 1024);
     assertThat(threadsAfter).isLessThanOrEqualTo(threadsBefore + 2);
   }
 }

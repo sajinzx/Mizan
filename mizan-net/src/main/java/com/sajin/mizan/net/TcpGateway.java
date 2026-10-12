@@ -564,10 +564,12 @@ public final class TcpGateway
         slots.release();
       }
       for (Long a : accounts) {
-        Set<Conn> set = byAccount.get(a);
-        if (set != null) {
-          set.remove(this);
-        }
+        byAccount.computeIfPresent(
+            a,
+            (k, set) -> {
+              set.remove(this);
+              return set.isEmpty() ? null : set;
+            });
       }
       awaiting.values().removeIf(c -> c == this);
     }

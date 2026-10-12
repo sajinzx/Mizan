@@ -43,13 +43,19 @@ public final class LoadGenerator {
       int ordersPerTrader,
       long firstAccount,
       long seed,
-      CommandSigner signer) {
+      CommandSigner signer,
+      boolean iocOnly) {
 
     /** Real Ed25519 signatures with the fixture keys. */
     public static Params of(
         String host, int port, int traders, int ordersPerTrader, long firstAccount, long seed) {
       return new Params(
-          host, port, traders, ordersPerTrader, firstAccount, seed, CommandSigner.ED25519);
+          host, port, traders, ordersPerTrader, firstAccount, seed, CommandSigner.ED25519, false);
+    }
+
+    /** Only IOC orders: nothing rests, so the book does not grow (soak runs). */
+    public Params asIocOnly() {
+      return new Params(host, port, traders, ordersPerTrader, firstAccount, seed, signer, true);
     }
   }
 
@@ -195,7 +201,7 @@ public final class LoadGenerator {
         Side side = rnd.nextBoolean() ? Side.BUY : Side.SELL;
         long price = 95L + rnd.nextInt(11);
         long qty = 1L + rnd.nextInt(10);
-        TimeInForce tif = rnd.nextInt(4) == 0 ? TimeInForce.IOC : TimeInForce.GTC;
+        TimeInForce tif = p.iocOnly() || rnd.nextInt(4) == 0 ? TimeInForce.IOC : TimeInForce.GTC;
         SignedCommand cmd =
             p.signer()
                 .sign(
