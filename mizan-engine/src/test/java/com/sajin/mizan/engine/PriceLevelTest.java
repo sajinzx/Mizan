@@ -88,4 +88,31 @@ class PriceLevelTest {
       assertThat(l.isEmpty()).isEqualTo(model.isEmpty());
     }
   }
+
+  /** M10-T1 intrusive list: unlinking at head, middle and tail keeps FIFO and links clean. */
+  @Test
+  void intrusiveUnlinkAnywhere() {
+    PriceLevel l = new PriceLevel(100);
+    PriceLevel other = new PriceLevel(100);
+    LimitOrder[] o = new LimitOrder[5];
+    for (int i = 0; i < 5; i++) {
+      o[i] = order(i + 1, i + 1);
+      l.add(o[i]);
+    }
+    assertThat(other.remove(o[2])).as("not on that level").isFalse();
+    assertThat(l.remove(o[2])).isTrue(); // middle
+    assertThat(l.remove(o[2])).as("already removed").isFalse();
+    assertThat(l.remove(o[4])).isTrue(); // tail
+    assertThat(l.remove(o[0])).isTrue(); // head
+    assertThat(l.orders()).containsExactly(o[1], o[3]);
+    assertThat(l.size()).isEqualTo(2);
+    assertThat(l.total()).isEqualTo(2 + 4);
+    other.add(o[2]); // a removed order can rest again elsewhere
+    assertThatThrownBy(() -> l.add(o[2])).isInstanceOf(InvariantViolationError.class);
+    assertThat(l.removeFirst()).isSameAs(o[1]);
+    assertThat(l.removeFirst()).isSameAs(o[3]);
+    assertThat(l.isEmpty()).isTrue();
+    assertThat(l.orders()).isEmpty();
+    assertThatThrownBy(l::removeFirst).isInstanceOf(java.util.NoSuchElementException.class);
+  }
 }

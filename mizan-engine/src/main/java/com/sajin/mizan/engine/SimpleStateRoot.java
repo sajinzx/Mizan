@@ -24,6 +24,17 @@ public final class SimpleStateRoot {
 
   private SimpleStateRoot() {}
 
+  /** {@code instrument:2 | side:1 | account:8 | price:8 | remaining:8} (shared with v2). */
+  static byte[] bookValue(Order o) {
+    return ByteBuffer.allocate(2 + 1 + 8 + 8 + 8)
+        .putShort((short) o.instrument())
+        .put((byte) o.side().code())
+        .putLong(o.accountId())
+        .putLong(o.limitPrice())
+        .putLong(o.remaining())
+        .array();
+  }
+
   public static byte[] compute(ExecutionCore core) {
     List<Leaf> ledgerLeaves = new ArrayList<>();
     core.ledger()
@@ -53,16 +64,7 @@ public final class SimpleStateRoot {
     orders.sort((a, b) -> Long.compare(a.id(), b.id()));
     List<Leaf> bookLeaves = new ArrayList<>(orders.size());
     for (Order o : orders) {
-      bookLeaves.add(
-          new Leaf(
-              o.id(),
-              ByteBuffer.allocate(2 + 1 + 8 + 8 + 8)
-                  .putShort((short) o.instrument())
-                  .put((byte) o.side().code())
-                  .putLong(o.accountId())
-                  .putLong(o.limitPrice())
-                  .putLong(o.remaining())
-                  .array()));
+      bookLeaves.add(new Leaf(o.id(), bookValue(o)));
     }
 
     return Hashing.sha256(

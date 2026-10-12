@@ -77,6 +77,20 @@ public final class Fixtures {
     return genesis(1);
   }
 
+  /** {@link #genesis()} with state root version 2 (sparse Merkle trees, M10-T2). */
+  public static GenesisConfig genesisV2() {
+    GenesisConfig g = genesis();
+    return new GenesisConfig(
+        g.chainId(),
+        2,
+        g.adminPubKey(),
+        g.assets(),
+        g.instruments(),
+        g.validators(),
+        g.block(),
+        g.consensus());
+  }
+
   /** Genesis with {@code validators} validators on consecutive localhost ports from 7000. */
   public static GenesisConfig genesis(int validators) {
     List<GenesisConfig.Validator> vs = new ArrayList<>();

@@ -137,7 +137,15 @@ class ArchRulesTest {
             call ->
                 iterating.contains(call.getName())
                     && Stream.of(
-                            HashMap.class, HashSet.class, LinkedHashMap.class, LinkedHashSet.class)
+                            HashMap.class,
+                            HashSet.class,
+                            LinkedHashMap.class,
+                            LinkedHashSet.class,
+                            org.agrona.collections.Long2ObjectHashMap.class,
+                            org.agrona.collections.Int2ObjectHashMap.class,
+                            org.agrona.collections.Long2LongHashMap.class,
+                            org.agrona.collections.Object2ObjectHashMap.class,
+                            org.agrona.collections.LongHashSet.class)
                         .anyMatch(t -> call.getTargetOwner().isEquivalentTo(t)));
     noClasses().that(DETERMINISTIC).should().callCodeUnitWhere(hashIteration).check(classes);
     noClasses()

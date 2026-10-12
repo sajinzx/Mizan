@@ -56,6 +56,7 @@ public final class ExecutionCore {
   private final TreeMap<Integer, OrderBook> books;
   private long nextOrderId;
   private long nextTradeSeq;
+  private SmtStateRoot smt; // state root v2 only; null for v1
 
   private ExecutionCore(
       GenesisConfig genesis,
@@ -82,6 +83,18 @@ public final class ExecutionCore {
     this.nextTradeSeq = nextTradeSeq;
   }
 
+  /** v2 only: attaches incremental root tracking (built from scratch, or a copy's trees). */
+  private ExecutionCore withSmt(SmtStateRoot s) {
+    if (genesis.stateRootVersion() == 2) {
+      smt = s == null ? SmtStateRoot.fromScratch(this) : s;
+      ledger.setDirt(smt);
+      for (OrderBook b : books.values()) {
+        b.setDirt(smt);
+      }
+    }
+    return this;
+  }
+
   /**
    * The state at height 0 (§5.3, M2-T6): the fee account (0) exists implicitly with no key and can
    * never sign; the admin account (1) is registered with the genesis admin key; each instrument
@@ -97,17 +110,13 @@ public final class ExecutionCore {
    */
   public static ExecutionCore genesis(
       GenesisConfig g, SignatureVerifier verifier, boolean verifySignatures) {
-    if (g.stateRootVersion() != 1) {
-      throw new IllegalArgumentException(
-          "stateRootVersion " + g.stateRootVersion() + " is not supported yet");
-    }
     Ledger ledger = new Ledger();
     ledger.register(Accounts.ADMIN_ACCOUNT, g.adminPubKey(), 0);
     TreeMap<Integer, OrderBook> books = new TreeMap<>();
     for (Instrument i : g.instruments()) {
       books.put(i.id(), new OrderBook(i.id()));
     }
-    return new ExecutionCore(g, verifier, verifySignatures, ledger, books, 1, 1);
+    return new ExecutionCore(g, verifier, verifySignatures, ledger, books, 1, 1).withSmt(null);
   }
 
   /** Rebuilds a core from decoded snapshot parts (used by {@link StateCodec}). */
@@ -118,7 +127,8 @@ public final class ExecutionCore {
       Map<Integer, OrderBook> books,
       long nextOrderId,
       long nextTradeSeq) {
-    return new ExecutionCore(g, verifier, true, ledger, books, nextOrderId, nextTradeSeq);
+    return new ExecutionCore(g, verifier, true, ledger, books, nextOrderId, nextTradeSeq)
+        .withSmt(null);
   }
 
   /** Deep, independent copy of all state. */
@@ -128,7 +138,8 @@ public final class ExecutionCore {
       b.put(e.getKey(), e.getValue().copy());
     }
     return new ExecutionCore(
-        genesis, verifier, verifySignatures, ledger.copy(), b, nextOrderId, nextTradeSeq);
+            genesis, verifier, verifySignatures, ledger.copy(), b, nextOrderId, nextTradeSeq)
+        .withSmt(smt == null ? null : smt.copy());
   }
 
   // ------------------------------------------------------------------ execute
@@ -321,8 +332,28 @@ public final class ExecutionCore {
 
   // ------------------------------------------------------------------ views
 
+  /**
+   * The state root: version 1 recomputes it from all state; version 2 applies only the keys changed
+   * since the last call to its sparse Merkle trees (§5.6, M10-T2).
+   */
   public byte[] stateRoot() {
-    return SimpleStateRoot.compute(this);
+    return smt == null ? SimpleStateRoot.compute(this) : smt.root(this);
+  }
+
+  /** Version 2 from scratch, ignoring the incremental trees: the oracle for tests. */
+  byte[] stateRootFromScratch() {
+    return SmtStateRoot.fromScratch(this).root(this);
+  }
+
+  /** The resting order with this id on any book, or {@code null}. */
+  Order findOrder(long orderId) {
+    for (OrderBook b : books.values()) {
+      Order o = b.find(orderId);
+      if (o != null) {
+        return o;
+      }
+    }
+    return null;
   }
 
   public long nextTradeSeq() {

@@ -1,7 +1,6 @@
 package com.sajin.mizan.engine;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.sajin.mizan.core.Accounts;
 import com.sajin.mizan.core.GenesisConfig;
@@ -45,19 +44,9 @@ class GenesisTest {
   }
 
   @Test
-  void stateRootVersion2IsNotSupportedYet() {
-    GenesisConfig g = Fixtures.genesis();
-    GenesisConfig v2 =
-        new GenesisConfig(
-            g.chainId(),
-            2,
-            g.adminPubKey(),
-            g.assets(),
-            g.instruments(),
-            g.validators(),
-            g.block(),
-            g.consensus());
-    assertThatThrownBy(() -> ExecutionCore.genesis(v2, SignatureVerifier.ed25519()))
-        .isInstanceOf(IllegalArgumentException.class);
+  void stateRootVersionIsChosenByGenesis() {
+    ExecutionCore v1 = ExecutionCore.genesis(Fixtures.genesis(), SignatureVerifier.ed25519());
+    ExecutionCore v2 = ExecutionCore.genesis(Fixtures.genesisV2(), SignatureVerifier.ed25519());
+    assertThat(v2.stateRoot()).isNotEqualTo(v1.stateRoot()).isEqualTo(v2.stateRootFromScratch());
   }
 }

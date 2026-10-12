@@ -20,6 +20,12 @@ public abstract sealed class Order permits LimitOrder, MarketOrder {
   private final long price;
   private long remaining;
 
+  // Intrusive FIFO links (M10-T1), owned by the PriceLevel this order rests on; null otherwise.
+  // Never copied: a copied order is linked into the copied book's own levels.
+  PriceLevel level;
+  Order prev;
+  Order next;
+
   Order(
       long id,
       long accountId,

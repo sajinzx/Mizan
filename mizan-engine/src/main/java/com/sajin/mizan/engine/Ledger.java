@@ -48,6 +48,12 @@ public final class Ledger {
   private final TreeMap<Long, Bal> bal = new TreeMap<>();
   private final TreeMap<Long, Meta> meta = new TreeMap<>();
   private final TreeMap<Integer, Long> supply = new TreeMap<>();
+  private StateDirt dirt = StateDirt.NONE;
+
+  /** Where changed keys are reported (state root v2); {@code NONE} for v1. */
+  void setDirt(StateDirt d) {
+    this.dirt = d;
+  }
 
   public static long key(long account, int asset) {
     return (account << 16) | asset;
@@ -139,6 +145,7 @@ public final class Ledger {
       throw new InvalidOrderException("account already registered: " + account);
     }
     meta.put(account, new Meta(pubKey.clone(), nonce));
+    dirt.meta(account);
   }
 
   /** Burns {@code nonce}: the only mutation allowed before business validation (§6.3). */
@@ -148,6 +155,7 @@ public final class Ledger {
       throw new InvariantViolationError("nonce " + nonce + " not consumable for " + account);
     }
     m.lastNonce = nonce;
+    dirt.meta(account);
   }
 
   /**
@@ -247,6 +255,7 @@ public final class Ledger {
       return;
     }
     long k = key(account, asset);
+    dirt.ledger(k);
     Bal b = bal.get(k);
     long free;
     long held;
@@ -276,6 +285,7 @@ public final class Ledger {
     if (free < 0 || held < 0 || (free == 0 && held == 0)) {
       throw new IllegalArgumentException("bad balance entry");
     }
+    dirt.ledger(key(account, asset));
     if (bal.putIfAbsent(key(account, asset), new Bal(free, held)) != null) {
       throw new IllegalArgumentException("duplicate balance entry");
     }
@@ -283,6 +293,7 @@ public final class Ledger {
   }
 
   void restoreAccount(long account, byte[] pubKey, long lastNonce) {
+    dirt.meta(account);
     if (meta.putIfAbsent(account, new Meta(pubKey.clone(), lastNonce)) != null) {
       throw new IllegalArgumentException("duplicate account");
     }

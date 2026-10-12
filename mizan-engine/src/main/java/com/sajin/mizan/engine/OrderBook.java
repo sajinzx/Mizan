@@ -6,10 +6,10 @@ import com.sajin.mizan.core.Side;
 import com.sajin.mizan.core.Trade;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
+import org.agrona.collections.Long2ObjectHashMap;
 
 /**
  * Price-time priority book for one instrument (§6.2). Bids are best-first descending, asks
@@ -21,9 +21,16 @@ public final class OrderBook {
   private final TreeMap<Long, PriceLevel> bids = new TreeMap<>(Collections.reverseOrder());
   private final TreeMap<Long, PriceLevel> asks = new TreeMap<>();
 
-  // Declared as HashMap (not Map) so ArchRulesTest can prove it is never iterated.
-  @SuppressWarnings("NonApiType")
-  private final HashMap<Long, Order> index = new HashMap<>();
+  // Primitive-keyed (M10-T1: no Long boxing per lookup). Declared with its concrete type so
+  // ArchRulesTest can prove it is never iterated.
+  private final Long2ObjectHashMap<Order> index = new Long2ObjectHashMap<>();
+
+  private StateDirt dirt = StateDirt.NONE;
+
+  /** Where changed order ids are reported (state root v2); {@code NONE} for v1. */
+  void setDirt(StateDirt d) {
+    this.dirt = d;
+  }
 
   /** One aggregated depth entry. */
   public record Level(long price, long qty) {}
@@ -58,6 +65,7 @@ public final class OrderBook {
       PriceLevel level = best.getValue();
       Order maker = level.peekFirst();
       if (maker.accountId() == taker.accountId()) {
+        dirt.order(maker.id());
         level.removeFirst();
         index.remove(maker.id());
         if (level.isEmpty()) {
@@ -72,6 +80,7 @@ public final class OrderBook {
         break; // taker cannot afford another lot
       }
       maker.fill(qty);
+      dirt.order(maker.id());
       taker.fill(qty);
       level.reduce(qty);
       Order buyer = taker.side() == Side.BUY ? taker : maker;
@@ -138,6 +147,7 @@ public final class OrderBook {
     if (index.putIfAbsent(o.id(), o) != null) {
       throw new InvariantViolationError("duplicate order id " + o.id());
     }
+    dirt.order(o.id());
     side(o.side()).computeIfAbsent(o.limitPrice(), PriceLevel::new).add(o);
   }
 
@@ -156,6 +166,7 @@ public final class OrderBook {
       throw new InvalidOrderException("order " + orderId + " belongs to another account");
     }
     index.remove(orderId);
+    dirt.order(orderId);
     var levels = side(o.side());
     PriceLevel level = levels.get(o.limitPrice());
     if (level == null || !level.remove(o)) {
