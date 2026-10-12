@@ -39,6 +39,13 @@ public final class MizanClient implements AutoCloseable {
       new ConcurrentHashMap<>();
   private final ConcurrentHashMap<Key, CompletableFuture<Messages.Status>> statuses =
       new ConcurrentHashMap<>();
+  private final java.util.LinkedHashMap<Key, Messages.Final> recentFinals =
+      new java.util.LinkedHashMap<>() {
+        @Override
+        protected boolean removeEldestEntry(java.util.Map.Entry<Key, Messages.Final> e) {
+          return size() > 4_096;
+        }
+      };
   private volatile CompletableFuture<Messages.Snapshot> pendingSnapshot = new CompletableFuture<>();
   private final Consumer<ServerMessage> pushes;
   private final Thread reader;
@@ -78,7 +85,13 @@ public final class MizanClient implements AutoCloseable {
       case Messages.Final f -> {
         Key k = new Key(f.account(), f.nonce());
         complete(acks, k, m); // a cached FINAL can be the first answer to a retry
-        CompletableFuture<Messages.Final> fut = finals.remove(k);
+        CompletableFuture<Messages.Final> fut;
+        synchronized (recentFinals) {
+          fut = finals.remove(k);
+          if (fut == null) {
+            recentFinals.put(k, f); // FINAL arrived before anyone asked for it
+          }
+        }
         if (fut != null) {
           fut.complete(f);
         }
@@ -141,14 +154,23 @@ public final class MizanClient implements AutoCloseable {
     Key k = new Key(c.accountId(), c.nonce());
     CompletableFuture<ServerMessage> fut = new CompletableFuture<>();
     acks.put(k, fut);
-    finals.computeIfAbsent(k, x -> new CompletableFuture<>());
     write(Messages.order(c.raw()));
     return fut;
   }
 
-  /** Completes when the command's block is final. Call after {@link #send}. */
+  /**
+   * Completes when the command's block is final. May be called before or after the {@code FINAL}
+   * arrives (recent ones are remembered).
+   */
   public CompletableFuture<Messages.Final> finality(long account, long nonce) {
-    return finals.computeIfAbsent(new Key(account, nonce), x -> new CompletableFuture<>());
+    Key k = new Key(account, nonce);
+    synchronized (recentFinals) {
+      Messages.Final early = recentFinals.remove(k);
+      if (early != null) {
+        return CompletableFuture.completedFuture(early);
+      }
+      return finals.computeIfAbsent(k, x -> new CompletableFuture<>());
+    }
   }
 
   public CompletableFuture<Messages.Status> queryStatus(long account, long nonce)

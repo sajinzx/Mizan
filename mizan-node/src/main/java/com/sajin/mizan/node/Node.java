@@ -5,6 +5,7 @@ import com.sajin.mizan.chain.GenesisAnchor;
 import com.sajin.mizan.chain.Recovery;
 import com.sajin.mizan.chain.SingleNodeConsensus;
 import com.sajin.mizan.chain.ValidatorSet;
+import com.sajin.mizan.chain.bft.RoundBft;
 import com.sajin.mizan.core.Accounts;
 import com.sajin.mizan.core.EngineListener;
 import com.sajin.mizan.core.FinalityListener;
@@ -231,7 +232,7 @@ public final class Node implements AutoCloseable {
     return n;
   }
 
-  private static void checkAnchor(GenesisConfig g, Path dataDir) throws IOException {
+  static void checkAnchor(GenesisConfig g, Path dataDir) throws IOException {
     Path f = dataDir.resolve("genesis.anchor");
     String anchor = HexFormat.of().formatHex(GenesisAnchor.hash(g));
     if (Files.exists(f)) {
@@ -243,6 +244,58 @@ public final class Node implements AutoCloseable {
     } else {
       Files.writeString(f, anchor + "\n", StandardCharsets.US_ASCII);
     }
+  }
+
+  /**
+   * Starts BFT validator {@code me} that hosts the sequencer and client gateway (the proposer in
+   * M7). Blocks are agreed with the other validators over TCP (genesis addresses); BFT mode forces
+   * {@code maxInflight = 1}.
+   */
+  public static Node startBft(
+      Settings s,
+      Persistence p,
+      Signer validatorKey,
+      int me,
+      RoundBft.ProposerFn proposer,
+      List<EngineListener> extraListeners,
+      List<FinalityListener> extraFinality)
+      throws IOException {
+    GenesisConfig g = s.genesis();
+    Sequencer.Config sc = s.sequencer();
+    Settings bft =
+        new Settings(
+            g,
+            s.gateway(),
+            new Sequencer.Config(
+                sc.inboundCapacity(),
+                sc.controlCapacity(),
+                sc.maxBatch(),
+                sc.cutIntervalNanos(),
+                1),
+            s.gatewayPreCheck(),
+            s.marketDataPort(),
+            s.resultCacheCapacity());
+    Files.createDirectories(p.dataDir());
+    checkAnchor(g, p.dataDir());
+    CachingVerifier v = new CachingVerifier(SignatureVerifier.ed25519());
+    BlockStore store = BlockStore.open(p.dataDir().resolve("blocks.log"));
+    SnapshotStore snaps = new SnapshotStore(p.dataDir().resolve("snapshots"), p.keepSnapshots());
+    Recovery.Recovered r = Recovery.recover(g, v, store, snaps, 64);
+    Node n =
+        new Node(
+            bft,
+            v,
+            r.committed(),
+            f -> BftSetup.build(g, p, validatorKey, me, proposer, v, r, store, snaps, f),
+            extraListeners,
+            extraFinality);
+    for (Recovery.Replayed b : r.recent()) {
+      n.gateway.onFinal(b.height(), b.commands(), b.results());
+    }
+    n.startThreads();
+    LOG.info(
+        "validator {} up at height {} with gateway 127.0.0.1:{}", me, r.height(), n.gateway.port());
+    return n;
   }
 
   /** Adapts {@link ChainDriver} (and the block log it owns) to {@link ChainLayer}. */
