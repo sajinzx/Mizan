@@ -33,9 +33,7 @@ class BftClusterTest {
     GenesisConfig g = Fixtures.genesis(n);
     List<GenesisConfig.Validator> vs = new ArrayList<>();
     for (GenesisConfig.Validator v : g.validators()) {
-      try (ServerSocket s = new ServerSocket(0)) {
-        vs.add(new GenesisConfig.Validator(v.index(), v.pubKey(), "127.0.0.1", s.getLocalPort()));
-      }
+      vs.add(new GenesisConfig.Validator(v.index(), v.pubKey(), "127.0.0.1", freeTcpAndUdpPort()));
     }
     return new GenesisConfig(
         g.chainId(),
@@ -46,6 +44,21 @@ class BftClusterTest {
         vs,
         g.block(),
         g.consensus());
+  }
+
+  /** A port number free for both TCP (peer links) and UDP (heartbeats). */
+  static int freeTcpAndUdpPort() throws IOException {
+    for (int attempt = 0; attempt < 50; attempt++) {
+      try (ServerSocket s = new ServerSocket(0)) {
+        int port = s.getLocalPort();
+        try (java.net.DatagramSocket d = new java.net.DatagramSocket(port)) {
+          return d.getLocalPort();
+        } catch (java.net.SocketException taken) {
+          // UDP side busy: try another
+        }
+      }
+    }
+    throw new IOException("no free TCP+UDP port");
   }
 
   @Test

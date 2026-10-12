@@ -136,49 +136,78 @@ public final class Main implements Callable<Integer> {
     @Option(names = "--md-port", defaultValue = "9001")
     int mdPort;
 
+    @Option(
+        names = "--fixed-proposer",
+        description = "M7 mode: validator 0 is the only proposer and hosts the only gateway.")
+    boolean fixedProposer;
+
     @Override
     public Integer call() throws Exception {
       GenesisConfig g = DevGenesis.config(nodes);
       java.nio.file.Files.createDirectories(data);
       GenesisJson.write(g, data.resolve("genesis.json"));
-      com.sajin.mizan.chain.bft.RoundBft.ProposerFn proposer =
-          com.sajin.mizan.chain.bft.RoundBft.ProposerFn.fixed(0);
-      Node leader =
-          Node.startBft(
-              Node.Settings.dev(g, port).withMarketData(mdPort),
-              Node.Persistence.at(data.resolve("v0")),
-              DevGenesis.validatorKey(0),
-              0,
-              proposer,
-              List.of(),
-              List.of());
-      List<FollowerValidator> followers = new java.util.ArrayList<>();
-      for (int i = 1; i < nodes; i++) {
-        followers.add(
-            FollowerValidator.start(
-                g,
-                Node.Persistence.at(data.resolve("v" + i)),
-                DevGenesis.validatorKey(i),
-                i,
-                proposer));
+      List<AutoCloseable> running = new java.util.ArrayList<>();
+      StringBuilder ports = new StringBuilder();
+      if (fixedProposer) {
+        com.sajin.mizan.chain.bft.RoundBft.ProposerFn proposer =
+            com.sajin.mizan.chain.bft.RoundBft.ProposerFn.fixed(0);
+        Node leader =
+            Node.startBft(
+                Node.Settings.dev(g, port).withMarketData(mdPort),
+                Node.Persistence.at(data.resolve("v0")),
+                DevGenesis.validatorKey(0),
+                0,
+                proposer,
+                List.of(),
+                List.of());
+        running.add(leader);
+        ports.append("gateway 127.0.0.1:").append(leader.gatewayPort());
+        for (int i = 1; i < nodes; i++) {
+          running.add(
+              FollowerValidator.start(
+                  g,
+                  Node.Persistence.at(data.resolve("v" + i)),
+                  DevGenesis.validatorKey(i),
+                  i,
+                  proposer));
+        }
+      } else {
+        for (int i = 0; i < nodes; i++) {
+          ValidatorNode v =
+              ValidatorNode.start(
+                  Node.Settings.dev(g, port + i).withMarketData(i == 0 ? mdPort : -1),
+                  Node.Persistence.at(data.resolve("v" + i)),
+                  DevGenesis.validatorKey(i),
+                  i,
+                  List.of());
+          running.add(v);
+          ports.append(i == 0 ? "gateways " : ", ").append("127.0.0.1:").append(v.gatewayPort());
+        }
       }
       CountDownLatch done = new CountDownLatch(1);
       Runtime.getRuntime()
           .addShutdownHook(
               new Thread(
                   () -> {
-                    leader.close();
-                    followers.forEach(FollowerValidator::close);
+                    for (AutoCloseable c : running) {
+                      try {
+                        c.close();
+                      } catch (Exception e) {
+                        // shutting down
+                      }
+                    }
                     done.countDown();
                   },
                   "shutdown"));
       System.out.println(
           nodes
-              + " validators up; gateway 127.0.0.1:"
-              + leader.gatewayPort()
-              + "  market data udp 127.0.0.1:"
-              + leader.marketDataPort()
-              + "  data "
+              + " validators up ("
+              + (fixedProposer ? "fixed proposer" : "rotating proposer")
+              + "); "
+              + ports
+              + "; market data udp 127.0.0.1:"
+              + mdPort
+              + "; data "
               + data.toAbsolutePath());
       done.await();
       return 0;

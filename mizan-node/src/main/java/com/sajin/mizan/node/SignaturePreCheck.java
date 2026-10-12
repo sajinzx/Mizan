@@ -2,11 +2,13 @@ package com.sajin.mizan.node;
 
 import com.sajin.mizan.core.CommandCodec;
 import com.sajin.mizan.core.ExecResult;
+import com.sajin.mizan.core.FinalityListener;
 import com.sajin.mizan.core.Register;
 import com.sajin.mizan.core.ResultListener;
 import com.sajin.mizan.core.SignedCommand;
 import com.sajin.mizan.crypto.SignatureVerifier;
 import com.sajin.mizan.net.TcpGateway;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -18,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>The key directory is learned from accepted {@code REGISTER} results. It is only an
  * optimisation: the engine re-verifies everything against its own state.
  */
-final class SignaturePreCheck implements TcpGateway.PreCheck, ResultListener {
+final class SignaturePreCheck implements TcpGateway.PreCheck, ResultListener, FinalityListener {
   private final SignatureVerifier verifier;
   private final ConcurrentHashMap<Long, byte[]> keys = new ConcurrentHashMap<>();
 
@@ -34,6 +36,14 @@ final class SignaturePreCheck implements TcpGateway.PreCheck, ResultListener {
   public boolean ok(SignedCommand c) {
     byte[] key = c.body() instanceof Register r ? r.pubKey() : keys.get(c.accountId());
     return key != null && verifier.verify(key, CommandCodec.unsignedBytes(c), c.signature());
+  }
+
+  /** Learns keys from committed registrations (rotation mode, where others execute them). */
+  @Override
+  public void onFinal(long height, List<SignedCommand> cmds, List<ExecResult> results) {
+    for (int i = 0; i < cmds.size(); i++) {
+      onResult(cmds.get(i), results.get(i));
+    }
   }
 
   @Override
