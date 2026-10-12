@@ -22,7 +22,7 @@ jobs:
           distribution: temurin
           java-version: "21"
       # Also validates the wrapper jar checksum.
-      - uses: gradle/actions/setup-gradle@v5
+      - uses: gradle/actions/setup-gradle@v6
       - name: Build (compile, Spotless, Error Prone, unit + short property tests, JaCoCo, checkModuleGraph)
         run: ./gradlew build --stacktrace
       - name: Upload test reports
