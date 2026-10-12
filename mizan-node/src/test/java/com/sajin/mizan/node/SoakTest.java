@@ -31,8 +31,8 @@ class SoakTest {
     long seconds = Long.getLong("mizan.soakSeconds", 600);
     MemoryMXBean mem = ManagementFactory.getMemoryMXBean();
     int threadsBefore = Thread.activeCount();
-    // A small result cache and IOC-only orders make every bounded structure fill early, so any
-    // further heap growth would be a leak rather than legitimate retained state.
+    // A small result cache and IOC-only orders keep retained state bounded, so once the caches are
+    // full any further heap growth would be a leak.
     Node node =
         Node.startInMemory(
             Node.Settings.dev(NodeIntegrationTest.G, 0).withResultCache(50_000), List.of());
@@ -74,17 +74,16 @@ class SoakTest {
         threadsBefore,
         threadsAfter);
 
-    int third = Math.max(1, heap.size() / 3);
-    double early =
-        heap.subList(0, third).stream().mapToLong(Long::longValue).average().orElseThrow();
-    double late =
-        heap.subList(heap.size() - third, heap.size()).stream()
-            .mapToLong(Long::longValue)
-            .average()
-            .orElseThrow();
-    // Accounts still accumulate (20 per round, a few hundred bytes each across both cores and the
-    // gateway); allow 32 MiB for that. A leak proportional to orders would exceed it many times.
-    assertThat(late).isLessThan(early + 32.0 * 1024 * 1024);
+    // Bounded structures (the 2^18-entry signature cache, the result cache, per-account state of a
+    // few thousand accounts) fill during the first minutes; after that the heap must be flat. A
+    // leak
+    // proportional to orders grows by megabytes per sample for the whole run.
+    int third = Math.max(2, heap.size() / 3);
+    List<Long> tail = heap.subList(heap.size() - third, heap.size());
+    long min = tail.stream().mapToLong(Long::longValue).min().orElseThrow();
+    long max = tail.stream().mapToLong(Long::longValue).max().orElseThrow();
+    assertThat(max - min).as("heap growth in the last third (bytes)").isLessThan(8L * 1024 * 1024);
+    assertThat(max).isLessThan(512L * 1024 * 1024);
     assertThat(threadsAfter).isLessThanOrEqualTo(threadsBefore + 2);
   }
 }
