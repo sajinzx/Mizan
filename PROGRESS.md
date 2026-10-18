@@ -174,7 +174,22 @@ Note: M2 landed as one commit ("Milestone 2 completed") rather than one commit p
 - Seen while testing: a validator that restarts mid-height can judge a re-proposed block invalid because its timestamp is more than 5 s old. That is harmless with f = 1, because the 3 validators that formed the polka cached it as valid; it is recorded in `docs/protocol.md`.
 
 ## M10
-See spec §8.
+- [x] M10-T1 Intrusive doubly-linked `PriceLevel` (O(1) cancel; `PriceLevelTest.intrusiveUnlinkAnywhere`) and an Agrona `Long2ObjectHashMap` order index. `ArchRulesTest` now also forbids iterating Agrona hash maps. The differential and property tests pass unchanged.
+- [x] M10-T2 `SparseMerkleTree`: persistent, depth 64, default-hash empties, sorted dirty-key batches. State root v2 = `SmtStateRoot`, with tag 0x03 and `stateRootVersion = 2` (ADR 0016). Oracles: `SparseMerkleTreeTest` (against a by-definition reference) and `SmtStateRootTest` (incremental == from scratch after random streams, across copies and snapshots).
+- [x] M10-T3 GC comparison: Parallel, G1, Shenandoah, generational ZGC.
+- [x] M10-T4 Signature verification benchmarks: plain, cache hit, virtual-thread batch. The verifier now reuses decoded keys and `Signature` objects.
+- [x] M10-T5 (conditional) Pooling: **not done**, because measured allocation of 251 B per command does not justify it ([why](docs/bench/m10.md#5-object-pooling-m10-t5-conditional-not-done)).
+- [ ] M10-T6 (optional) Undo journal / group commit: **cut** (spec cut order).
+- [x] M10-T7 README: first screen with three linked numbers, architecture diagram, determinism rules, trade-offs, sandbox, quick start, limitations.
+- [ ] M10-T8 5-minute demo recording: **needs a human**. `--demo` scripts the tour.
+- [x] M10-T9 `CHANGELOG.md`; tag `v1.0.0`. Publishing to GitHub Packages or Maven Central **needs credentials** and is not done.
+
+**Gate M10 (2026-10-19): partly passed.** [docs/bench/m10.md](docs/bench/m10.md) has before/after rows for three optimizations, honestly:
+- state root v2: **9.6× faster at 10k accounts, 70× at 100k**;
+- intrusive levels: +26% on deep cancel queues, otherwise within the ±25% run-to-run noise of this laptop;
+- Ed25519 reuse: no measurable change.
+
+"A stranger runs the 4-node demo from the README" **needs a human**. Earlier gates were re-run in the final self-test loop (below).
 
 ## Known issues / deferred
 - M5 UI not visually verified (see Gate M5).

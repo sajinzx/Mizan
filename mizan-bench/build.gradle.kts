@@ -25,6 +25,11 @@ jmh {
     providers.gradleProperty("jmh.includes").orNull?.let { includes.add(it) }
     // -Pjmh.jvmArgs="-XX:+UseZGC -XX:+ZGenerational" (M10-T3 GC comparison); space-separated.
     providers.gradleProperty("jmh.jvmArgs").orNull?.let { jvmArgsAppend.addAll(it.split(" ").filter(String::isNotBlank)) }
+    // -Pjmh.params=signatures=off fixes a @Param to one value.
+    providers.gradleProperty("jmh.params").orNull?.let {
+        val (k, v) = it.split("=", limit = 2)
+        benchmarkParameters.put(k, project.objects.listProperty(String::class.java).value(listOf(v)))
+    }
     // -Pjmh.profilers=gc adds JMH's allocation profiler (M10-T5).
     providers.gradleProperty("jmh.profilers").orNull?.let { profilers.addAll(it.split(",")) }
     // -Pjmh.results=<name> keeps each run's output separately.

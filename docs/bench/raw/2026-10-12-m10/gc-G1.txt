@@ -1,0 +1,229 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: C:\Users\sajin\.gradle\jdks\eclipse_adoptium-21-amd64-windows.2\bin\java.exe
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=C:\Users\sajin\OneDrive\Documents\projects\Mizan\Mizan\mizan-bench\build\tmp\jmh -Duser.country=US -Duser.language=en -Duser.variant -Xmx1g -XX:+UseG1GC
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: com.sajin.mizan.bench.ExecuteBench.throughput
+# Parameters: (signatures = off)
+
+# Run progress: 0.00% complete, ETA 00:01:04
+# Fork: 1 of 2
+# Warmup Iteration   1: 3.083 ops/us
+# Warmup Iteration   2: 3.524 ops/us
+# Warmup Iteration   3: 3.553 ops/us
+Iteration   1: 3.521 ops/us
+Iteration   2: 3.454 ops/us
+Iteration   3: 3.460 ops/us
+Iteration   4: 3.557 ops/us
+Iteration   5: 3.572 ops/us
+
+# Run progress: 25.00% complete, ETA 00:02:14
+# Fork: 2 of 2
+# Warmup Iteration   1: 3.121 ops/us
+# Warmup Iteration   2: 3.508 ops/us
+# Warmup Iteration   3: 3.058 ops/us
+Iteration   1: 3.270 ops/us
+Iteration   2: 3.629 ops/us
+Iteration   3: 3.544 ops/us
+Iteration   4: 2.947 ops/us
+Iteration   5: 3.648 ops/us
+
+
+Result "com.sajin.mizan.bench.ExecuteBench.throughput":
+  3.460 ±(99.9%) 0.317 ops/us [Average]
+  (min, avg, max) = (2.947, 3.460, 3.648), stdev = 0.210
+  CI (99.9%): [3.143, 3.777] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: C:\Users\sajin\.gradle\jdks\eclipse_adoptium-21-amd64-windows.2\bin\java.exe
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=C:\Users\sajin\OneDrive\Documents\projects\Mizan\Mizan\mizan-bench\build\tmp\jmh -Duser.country=US -Duser.language=en -Duser.variant -Xmx1g -XX:+UseG1GC
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Sampling time
+# Benchmark: com.sajin.mizan.bench.ExecuteBench.latency
+# Parameters: (signatures = off)
+
+# Run progress: 50.00% complete, ETA 00:01:30
+# Fork: 1 of 2
+# Warmup Iteration   1: 0.515 ±(99.9%) 0.313 us/op
+# Warmup Iteration   2: 0.374 ±(99.9%) 0.110 us/op
+# Warmup Iteration   3: 0.334 ±(99.9%) 0.046 us/op
+Iteration   1: 0.334 ±(99.9%) 0.013 us/op
+                 p0.00:   0.099 us/op
+                 p0.50:   0.300 us/op
+                 p0.90:   0.500 us/op
+                 p0.95:   0.600 us/op
+                 p0.99:   0.899 us/op
+                 p0.999:  10.235 us/op
+                 p0.9999: 34.620 us/op
+                 p1.00:   126.464 us/op
+
+Iteration   2: 0.355 ±(99.9%) 0.017 us/op
+                 p0.00:   ≈ 0 us/op
+                 p0.50:   0.300 us/op
+                 p0.90:   0.500 us/op
+                 p0.95:   0.600 us/op
+                 p0.99:   0.900 us/op
+                 p0.999:  17.343 us/op
+                 p0.9999: 61.330 us/op
+                 p1.00:   93.568 us/op
+
+Iteration   3: 0.349 ±(99.9%) 0.013 us/op
+                 p0.00:   0.099 us/op
+                 p0.50:   0.300 us/op
+                 p0.90:   0.501 us/op
+                 p0.95:   0.601 us/op
+                 p0.99:   0.901 us/op
+                 p0.999:  9.346 us/op
+                 p0.9999: 45.887 us/op
+                 p1.00:   88.960 us/op
+
+Iteration   4: 0.320 ±(99.9%) 0.039 us/op
+                 p0.00:   0.099 us/op
+                 p0.50:   0.201 us/op
+                 p0.90:   0.500 us/op
+                 p0.95:   0.599 us/op
+                 p0.99:   0.800 us/op
+                 p0.999:  5.784 us/op
+                 p0.9999: 52.335 us/op
+                 p1.00:   628.736 us/op
+
+Iteration   5: 0.335 ±(99.9%) 0.053 us/op
+                 p0.00:   ≈ 0 us/op
+                 p0.50:   0.299 us/op
+                 p0.90:   0.500 us/op
+                 p0.95:   0.600 us/op
+                 p0.99:   0.801 us/op
+                 p0.999:  7.313 us/op
+                 p0.9999: 50.143 us/op
+                 p1.00:   877.568 us/op
+
+
+# Run progress: 75.00% complete, ETA 00:00:45
+# Fork: 2 of 2
+# Warmup Iteration   1: 0.526 ±(99.9%) 0.246 us/op
+# Warmup Iteration   2: 0.383 ±(99.9%) 0.143 us/op
+# Warmup Iteration   3: 0.331 ±(99.9%) 0.056 us/op
+Iteration   1: 0.352 ±(99.9%) 0.063 us/op
+                 p0.00:   ≈ 0 us/op
+                 p0.50:   0.201 us/op
+                 p0.90:   0.500 us/op
+                 p0.95:   0.600 us/op
+                 p0.99:   0.801 us/op
+                 p0.999:  8.604 us/op
+                 p0.9999: 91.268 us/op
+                 p1.00:   766.976 us/op
+
+Iteration   2: 0.348 ±(99.9%) 0.072 us/op
+                 p0.00:   0.099 us/op
+                 p0.50:   0.299 us/op
+                 p0.90:   0.500 us/op
+                 p0.95:   0.600 us/op
+                 p0.99:   0.900 us/op
+                 p0.999:  8.997 us/op
+                 p0.9999: 38.037 us/op
+                 p1.00:   1161.216 us/op
+
+Iteration   3: 0.339 ±(99.9%) 0.035 us/op
+                 p0.00:   0.099 us/op
+                 p0.50:   0.299 us/op
+                 p0.90:   0.500 us/op
+                 p0.95:   0.600 us/op
+                 p0.99:   0.900 us/op
+                 p0.999:  11.740 us/op
+                 p0.9999: 68.636 us/op
+                 p1.00:   521.216 us/op
+
+Iteration   4: 0.321 ±(99.9%) 0.023 us/op
+                 p0.00:   ≈ 0 us/op
+                 p0.50:   0.299 us/op
+                 p0.90:   0.500 us/op
+                 p0.95:   0.600 us/op
+                 p0.99:   0.800 us/op
+                 p0.999:  5.174 us/op
+                 p0.9999: 43.792 us/op
+                 p1.00:   308.736 us/op
+
+Iteration   5: 0.320 ±(99.9%) 0.050 us/op
+                 p0.00:   ≈ 0 us/op
+                 p0.50:   0.201 us/op
+                 p0.90:   0.500 us/op
+                 p0.95:   0.600 us/op
+                 p0.99:   0.800 us/op
+                 p0.999:  3.636 us/op
+                 p0.9999: 56.961 us/op
+                 p1.00:   809.984 us/op
+
+
+
+Result "com.sajin.mizan.bench.ExecuteBench.latency":
+  N = 549575
+  mean =      0.337 ±(99.9%) 0.014 us/op
+
+  Histogram, us/op:
+    [   0.000,  125.000) = 549560 
+    [ 125.000,  250.000) = 6 
+    [ 250.000,  375.000) = 2 
+    [ 375.000,  500.000) = 0 
+    [ 500.000,  625.000) = 1 
+    [ 625.000,  750.000) = 2 
+    [ 750.000,  875.000) = 2 
+    [ 875.000, 1000.000) = 1 
+    [1000.000, 1125.000) = 0 
+    [1125.000, 1250.000) = 1 
+    [1250.000, 1375.000) = 0 
+    [1375.000, 1500.000) = 0 
+    [1500.000, 1625.000) = 0 
+    [1625.000, 1750.000) = 0 
+    [1750.000, 1875.000) = 0 
+
+  Percentiles, us/op:
+      p(0.0000) =        ≈ 0 us/op
+     p(50.0000) =      0.299 us/op
+     p(90.0000) =      0.500 us/op
+     p(95.0000) =      0.600 us/op
+     p(99.0000) =      0.899 us/op
+     p(99.9000) =      8.441 us/op
+     p(99.9900) =     50.974 us/op
+     p(99.9990) =    656.618 us/op
+     p(99.9999) =   1161.216 us/op
+    p(100.0000) =   1161.216 us/op
+
+
+# Run complete. Total time: 00:03:00
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                     (signatures)    Mode     Cnt     Score   Error   Units
+ExecuteBench.throughput                off   thrpt      10     3.460 ± 0.317  ops/us
+ExecuteBench.latency                   off  sample  549575     0.337 ± 0.014   us/op
+ExecuteBench.latency:p0.00             off  sample               ≈ 0           us/op
+ExecuteBench.latency:p0.50             off  sample             0.299           us/op
+ExecuteBench.latency:p0.90             off  sample             0.500           us/op
+ExecuteBench.latency:p0.95             off  sample             0.600           us/op
+ExecuteBench.latency:p0.99             off  sample             0.899           us/op
+ExecuteBench.latency:p0.999            off  sample             8.441           us/op
+ExecuteBench.latency:p0.9999           off  sample            50.974           us/op
+ExecuteBench.latency:p1.00             off  sample          1161.216           us/op
+
+Benchmark result is saved to C:\Users\sajin\OneDrive\Documents\projects\Mizan\Mizan\mizan-bench\build\results\jmh\gc-G1.json

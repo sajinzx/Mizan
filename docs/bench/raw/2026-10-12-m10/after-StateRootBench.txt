@@ -1,0 +1,1687 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: C:\Users\sajin\.gradle\jdks\eclipse_adoptium-21-amd64-windows.2\bin\java.exe
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=C:\Users\sajin\OneDrive\Documents\projects\Mizan\Mizan\mizan-bench\build\tmp\jmh -Duser.country=US -Duser.language=en -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: com.sajin.mizan.bench.StateRootBench.blockThenRoot
+# Parameters: (accounts = 100, version = 1)
+
+# Run progress: 0.00% complete, ETA 00:08:32
+# Fork: 1 of 2
+# Warmup Iteration   1: 136.290 us/op
+# Warmup Iteration   2: 97.707 us/op
+# Warmup Iteration   3: 89.148 us/op
+Iteration   1: 90.854 us/op
+Iteration   2: 101.151 us/op
+Iteration   3: 91.083 us/op
+Iteration   4: 96.313 us/op
+Iteration   5: 102.827 us/op
+
+# Run progress: 3.13% complete, ETA 00:08:50
+# Fork: 2 of 2
+# Warmup Iteration   1: 115.079 us/op
+# Warmup Iteration   2: 103.240 us/op
+# Warmup Iteration   3: 98.692 us/op
+Iteration   1: 101.026 us/op
+Iteration   2: 95.142 us/op
+Iteration   3: 99.599 us/op
+Iteration   4: 107.369 us/op
+Iteration   5: 152.283 us/op
+
+
+Result "com.sajin.mizan.bench.StateRootBench.blockThenRoot":
+  103.765 ±(99.9%) 26.937 us/op [Average]
+  (min, avg, max) = (90.854, 103.765, 152.283), stdev = 17.817
+  CI (99.9%): [76.828, 130.701] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: C:\Users\sajin\.gradle\jdks\eclipse_adoptium-21-amd64-windows.2\bin\java.exe
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=C:\Users\sajin\OneDrive\Documents\projects\Mizan\Mizan\mizan-bench\build\tmp\jmh -Duser.country=US -Duser.language=en -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: com.sajin.mizan.bench.StateRootBench.blockThenRoot
+# Parameters: (accounts = 100, version = 2)
+
+# Run progress: 6.25% complete, ETA 00:08:30
+# Fork: 1 of 2
+# Warmup Iteration   1: 411.129 us/op
+# Warmup Iteration   2: 342.504 us/op
+# Warmup Iteration   3: 384.758 us/op
+Iteration   1: 357.993 us/op
+Iteration   2: 349.750 us/op
+Iteration   3: 374.421 us/op
+Iteration   4: 352.654 us/op
+Iteration   5: 389.803 us/op
+
+# Run progress: 9.38% complete, ETA 00:08:16
+# Fork: 2 of 2
+# Warmup Iteration   1: 394.834 us/op
+# Warmup Iteration   2: 348.416 us/op
+# Warmup Iteration   3: 342.138 us/op
+Iteration   1: 353.469 us/op
+Iteration   2: 384.433 us/op
+Iteration   3: 362.008 us/op
+Iteration   4: 374.337 us/op
+Iteration   5: 342.566 us/op
+
+
+Result "com.sajin.mizan.bench.StateRootBench.blockThenRoot":
+  364.143 ±(99.9%) 23.855 us/op [Average]
+  (min, avg, max) = (342.566, 364.143, 389.803), stdev = 15.779
+  CI (99.9%): [340.288, 387.998] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: C:\Users\sajin\.gradle\jdks\eclipse_adoptium-21-amd64-windows.2\bin\java.exe
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=C:\Users\sajin\OneDrive\Documents\projects\Mizan\Mizan\mizan-bench\build\tmp\jmh -Duser.country=US -Duser.language=en -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: com.sajin.mizan.bench.StateRootBench.blockThenRoot
+# Parameters: (accounts = 1000, version = 1)
+
+# Run progress: 12.50% complete, ETA 00:07:58
+# Fork: 1 of 2
+# Warmup Iteration   1: 984.273 us/op
+# Warmup Iteration   2: 808.260 us/op
+# Warmup Iteration   3: 873.496 us/op
+Iteration   1: 793.666 us/op
+Iteration   2: 763.066 us/op
+Iteration   3: 767.704 us/op
+Iteration   4: 720.566 us/op
+Iteration   5: 710.890 us/op
+
+# Run progress: 15.63% complete, ETA 00:07:39
+# Fork: 2 of 2
+# Warmup Iteration   1: 874.238 us/op
+# Warmup Iteration   2: 733.476 us/op
+# Warmup Iteration   3: 827.393 us/op
+Iteration   1: 701.131 us/op
+Iteration   2: 683.171 us/op
+Iteration   3: 688.741 us/op
+Iteration   4: 698.062 us/op
+Iteration   5: 682.190 us/op
+
+
+Result "com.sajin.mizan.bench.StateRootBench.blockThenRoot":
+  720.919 ±(99.9%) 60.121 us/op [Average]
+  (min, avg, max) = (682.190, 720.919, 793.666), stdev = 39.766
+  CI (99.9%): [660.798, 781.040] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: C:\Users\sajin\.gradle\jdks\eclipse_adoptium-21-amd64-windows.2\bin\java.exe
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=C:\Users\sajin\OneDrive\Documents\projects\Mizan\Mizan\mizan-bench\build\tmp\jmh -Duser.country=US -Duser.language=en -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: com.sajin.mizan.bench.StateRootBench.blockThenRoot
+# Parameters: (accounts = 1000, version = 2)
+
+# Run progress: 18.75% complete, ETA 00:07:22
+# Fork: 1 of 2
+# Warmup Iteration   1: 688.472 us/op
+# Warmup Iteration   2: 612.467 us/op
+# Warmup Iteration   3: 573.992 us/op
+Iteration   1: 583.450 us/op
+Iteration   2: 594.600 us/op
+Iteration   3: 529.193 us/op
+Iteration   4: 531.430 us/op
+Iteration   5: 536.024 us/op
+
+# Run progress: 21.88% complete, ETA 00:07:04
+# Fork: 2 of 2
+# Warmup Iteration   1: 800.296 us/op
+# Warmup Iteration   2: 631.569 us/op
+# Warmup Iteration   3: 582.928 us/op
+Iteration   1: 581.548 us/op
+Iteration   2: 615.138 us/op
+Iteration   3: 577.381 us/op
+Iteration   4: 698.833 us/op
+Iteration   5: 738.869 us/op
+
+
+Result "com.sajin.mizan.bench.StateRootBench.blockThenRoot":
+  598.647 ±(99.9%) 105.982 us/op [Average]
+  (min, avg, max) = (529.193, 598.647, 738.869), stdev = 70.101
+  CI (99.9%): [492.664, 704.629] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: C:\Users\sajin\.gradle\jdks\eclipse_adoptium-21-amd64-windows.2\bin\java.exe
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=C:\Users\sajin\OneDrive\Documents\projects\Mizan\Mizan\mizan-bench\build\tmp\jmh -Duser.country=US -Duser.language=en -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: com.sajin.mizan.bench.StateRootBench.blockThenRoot
+# Parameters: (accounts = 10000, version = 1)
+
+# Run progress: 25.00% complete, ETA 00:06:47
+# Fork: 1 of 2
+# Warmup Iteration   1: 8951.965 us/op
+# Warmup Iteration   2: 8957.903 us/op
+# Warmup Iteration   3: 8099.869 us/op
+Iteration   1: 8515.094 us/op
+Iteration   2: 8805.731 us/op
+Iteration   3: 8280.796 us/op
+Iteration   4: 8181.057 us/op
+Iteration   5: 7936.166 us/op
+
+# Run progress: 28.13% complete, ETA 00:06:31
+# Fork: 2 of 2
+# Warmup Iteration   1: 10037.485 us/op
+# Warmup Iteration   2: 8462.166 us/op
+# Warmup Iteration   3: 8560.977 us/op
+Iteration   1: 8533.441 us/op
+Iteration   2: 8246.041 us/op
+Iteration   3: 8264.442 us/op
+Iteration   4: 7873.151 us/op
+Iteration   5: 7914.055 us/op
+
+
+Result "com.sajin.mizan.bench.StateRootBench.blockThenRoot":
+  8254.998 ±(99.9%) 455.929 us/op [Average]
+  (min, avg, max) = (7873.151, 8254.998, 8805.731), stdev = 301.569
+  CI (99.9%): [7799.069, 8710.926] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: C:\Users\sajin\.gradle\jdks\eclipse_adoptium-21-amd64-windows.2\bin\java.exe
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=C:\Users\sajin\OneDrive\Documents\projects\Mizan\Mizan\mizan-bench\build\tmp\jmh -Duser.country=US -Duser.language=en -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: com.sajin.mizan.bench.StateRootBench.blockThenRoot
+# Parameters: (accounts = 10000, version = 2)
+
+# Run progress: 31.25% complete, ETA 00:06:14
+# Fork: 1 of 2
+# Warmup Iteration   1: 898.398 us/op
+# Warmup Iteration   2: 796.472 us/op
+# Warmup Iteration   3: 831.385 us/op
+Iteration   1: 764.805 us/op
+Iteration   2: 786.974 us/op
+Iteration   3: 812.977 us/op
+Iteration   4: 831.041 us/op
+Iteration   5: 965.142 us/op
+
+# Run progress: 34.38% complete, ETA 00:05:58
+# Fork: 2 of 2
+# Warmup Iteration   1: 938.029 us/op
+# Warmup Iteration   2: 906.269 us/op
+# Warmup Iteration   3: 884.286 us/op
+Iteration   1: 922.563 us/op
+Iteration   2: 861.719 us/op
+Iteration   3: 858.561 us/op
+Iteration   4: 882.549 us/op
+Iteration   5: 916.197 us/op
+
+
+Result "com.sajin.mizan.bench.StateRootBench.blockThenRoot":
+  860.253 ±(99.9%) 95.731 us/op [Average]
+  (min, avg, max) = (764.805, 860.253, 965.142), stdev = 63.320
+  CI (99.9%): [764.522, 955.983] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: C:\Users\sajin\.gradle\jdks\eclipse_adoptium-21-amd64-windows.2\bin\java.exe
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=C:\Users\sajin\OneDrive\Documents\projects\Mizan\Mizan\mizan-bench\build\tmp\jmh -Duser.country=US -Duser.language=en -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: com.sajin.mizan.bench.StateRootBench.blockThenRoot
+# Parameters: (accounts = 100000, version = 1)
+
+# Run progress: 37.50% complete, ETA 00:05:41
+# Fork: 1 of 2
+# Warmup Iteration   1: 80365.660 us/op
+# Warmup Iteration   2: 75865.359 us/op
+# Warmup Iteration   3: 80477.900 us/op
+Iteration   1: 75245.833 us/op
+Iteration   2: 74973.670 us/op
+Iteration   3: 83968.096 us/op
+Iteration   4: 77361.126 us/op
+Iteration   5: 83126.508 us/op
+
+# Run progress: 40.63% complete, ETA 00:05:25
+# Fork: 2 of 2
+# Warmup Iteration   1: 85658.337 us/op
+# Warmup Iteration   2: 85883.125 us/op
+# Warmup Iteration   3: 77956.838 us/op
+Iteration   1: 74363.311 us/op
+Iteration   2: 80237.820 us/op
+Iteration   3: 85914.025 us/op
+Iteration   4: 81136.420 us/op
+Iteration   5: 84530.138 us/op
+
+
+Result "com.sajin.mizan.bench.StateRootBench.blockThenRoot":
+  80085.695 ±(99.9%) 6549.351 us/op [Average]
+  (min, avg, max) = (74363.311, 80085.695, 85914.025), stdev = 4331.990
+  CI (99.9%): [73536.344, 86635.046] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: C:\Users\sajin\.gradle\jdks\eclipse_adoptium-21-amd64-windows.2\bin\java.exe
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=C:\Users\sajin\OneDrive\Documents\projects\Mizan\Mizan\mizan-bench\build\tmp\jmh -Duser.country=US -Duser.language=en -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: com.sajin.mizan.bench.StateRootBench.blockThenRoot
+# Parameters: (accounts = 100000, version = 2)
+
+# Run progress: 43.75% complete, ETA 00:05:09
+# Fork: 1 of 2
+# Warmup Iteration   1: 1269.447 us/op
+# Warmup Iteration   2: 1187.068 us/op
+# Warmup Iteration   3: 1062.432 us/op
+Iteration   1: 1117.842 us/op
+Iteration   2: 1120.207 us/op
+Iteration   3: 1168.223 us/op
+Iteration   4: 1401.528 us/op
+Iteration   5: 1102.909 us/op
+
+# Run progress: 46.88% complete, ETA 00:04:53
+# Fork: 2 of 2
+# Warmup Iteration   1: 1260.232 us/op
+# Warmup Iteration   2: 1153.804 us/op
+# Warmup Iteration   3: 1122.416 us/op
+Iteration   1: 1173.529 us/op
+Iteration   2: 1091.292 us/op
+Iteration   3: 1177.451 us/op
+Iteration   4: 1027.365 us/op
+Iteration   5: 1072.476 us/op
+
+
+Result "com.sajin.mizan.bench.StateRootBench.blockThenRoot":
+  1145.282 ±(99.9%) 153.948 us/op [Average]
+  (min, avg, max) = (1027.365, 1145.282, 1401.528), stdev = 101.827
+  CI (99.9%): [991.334, 1299.230] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: C:\Users\sajin\.gradle\jdks\eclipse_adoptium-21-amd64-windows.2\bin\java.exe
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=C:\Users\sajin\OneDrive\Documents\projects\Mizan\Mizan\mizan-bench\build\tmp\jmh -Duser.country=US -Duser.language=en -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Sampling time
+# Benchmark: com.sajin.mizan.bench.StateRootBench.blockThenRoot
+# Parameters: (accounts = 100, version = 1)
+
+# Run progress: 50.00% complete, ETA 00:04:37
+# Fork: 1 of 2
+# Warmup Iteration   1: 109.859 ±(99.9%) 3.349 us/op
+# Warmup Iteration   2: 101.542 ±(99.9%) 1.100 us/op
+# Warmup Iteration   3: 92.478 ±(99.9%) 0.918 us/op
+Iteration   1: 92.262 ±(99.9%) 2.621 us/op
+                 p0.00:   79.104 us/op
+                 p0.50:   85.888 us/op
+                 p0.90:   95.488 us/op
+                 p0.95:   100.096 us/op
+                 p0.99:   195.909 us/op
+                 p0.999:  1090.836 us/op
+                 p0.9999: 8060.743 us/op
+                 p1.00:   12894.208 us/op
+
+Iteration   2: 100.580 ±(99.9%) 3.150 us/op
+                 p0.00:   80.896 us/op
+                 p0.50:   89.088 us/op
+                 p0.90:   112.640 us/op
+                 p0.95:   127.341 us/op
+                 p0.99:   216.561 us/op
+                 p0.999:  1069.591 us/op
+                 p0.9999: 3963.856 us/op
+                 p1.00:   17235.968 us/op
+
+Iteration   3: 104.138 ±(99.9%) 5.277 us/op
+                 p0.00:   75.520 us/op
+                 p0.50:   88.960 us/op
+                 p0.90:   125.184 us/op
+                 p0.95:   173.312 us/op
+                 p0.99:   261.814 us/op
+                 p0.999:  1168.413 us/op
+                 p0.9999: 4598.822 us/op
+                 p1.00:   29392.896 us/op
+
+Iteration   4: 106.258 ±(99.9%) 2.147 us/op
+                 p0.00:   75.008 us/op
+                 p0.50:   86.400 us/op
+                 p0.90:   141.568 us/op
+                 p0.95:   194.176 us/op
+                 p0.99:   368.640 us/op
+                 p0.999:  1406.464 us/op
+                 p0.9999: 3105.116 us/op
+                 p1.00:   3391.488 us/op
+
+Iteration   5: 92.611 ±(99.9%) 0.930 us/op
+                 p0.00:   75.648 us/op
+                 p0.50:   85.248 us/op
+                 p0.90:   99.840 us/op
+                 p0.95:   124.307 us/op
+                 p0.99:   212.078 us/op
+                 p0.999:  819.324 us/op
+                 p0.9999: 1424.426 us/op
+                 p1.00:   1503.232 us/op
+
+
+# Run progress: 53.13% complete, ETA 00:04:19
+# Fork: 2 of 2
+# Warmup Iteration   1: 171.933 ±(99.9%) 12.202 us/op
+# Warmup Iteration   2: 95.529 ±(99.9%) 1.132 us/op
+# Warmup Iteration   3: 95.242 ±(99.9%) 0.782 us/op
+Iteration   1: 99.009 ±(99.9%) 0.853 us/op
+                 p0.00:   77.056 us/op
+                 p0.50:   95.872 us/op
+                 p0.90:   107.776 us/op
+                 p0.95:   113.280 us/op
+                 p0.99:   207.872 us/op
+                 p0.999:  888.990 us/op
+                 p0.9999: 1212.185 us/op
+                 p1.00:   1273.856 us/op
+
+Iteration   2: 85.659 ±(99.9%) 0.842 us/op
+                 p0.00:   76.160 us/op
+                 p0.50:   81.792 us/op
+                 p0.90:   86.528 us/op
+                 p0.95:   90.240 us/op
+                 p0.99:   185.088 us/op
+                 p0.999:  923.299 us/op
+                 p0.9999: 1354.839 us/op
+                 p1.00:   1427.456 us/op
+
+Iteration   3: 95.171 ±(99.9%) 2.348 us/op
+                 p0.00:   76.416 us/op
+                 p0.50:   91.520 us/op
+                 p0.90:   103.296 us/op
+                 p0.95:   107.392 us/op
+                 p0.99:   137.472 us/op
+                 p0.999:  960.385 us/op
+                 p0.9999: 4639.361 us/op
+                 p1.00:   13041.664 us/op
+
+Iteration   4: 99.893 ±(99.9%) 20.619 us/op
+                 p0.00:   78.592 us/op
+                 p0.50:   91.392 us/op
+                 p0.90:   96.384 us/op
+                 p0.95:   101.120 us/op
+                 p0.99:   193.667 us/op
+                 p0.999:  903.015 us/op
+                 p0.9999: 1451.791 us/op
+                 p1.00:   126222.336 us/op
+
+Iteration   5: 92.617 ±(99.9%) 0.729 us/op
+                 p0.00:   79.488 us/op
+                 p0.50:   90.496 us/op
+                 p0.90:   95.104 us/op
+                 p0.95:   98.560 us/op
+                 p0.99:   137.472 us/op
+                 p0.999:  895.722 us/op
+                 p0.9999: 1225.731 us/op
+                 p1.00:   1302.528 us/op
+
+
+
+Result "com.sajin.mizan.bench.StateRootBench.blockThenRoot":
+  N = 207933
+  mean =     96.450 ±(99.9%) 2.127 us/op
+
+  Histogram, us/op:
+    [     0.000,  12500.000) = 207928 
+    [ 12500.000,  25000.000) = 3 
+    [ 25000.000,  37500.000) = 1 
+    [ 37500.000,  50000.000) = 0 
+    [ 50000.000,  62500.000) = 0 
+    [ 62500.000,  75000.000) = 0 
+    [ 75000.000,  87500.000) = 0 
+    [ 87500.000, 100000.000) = 0 
+    [100000.000, 112500.000) = 0 
+    [112500.000, 125000.000) = 0 
+    [125000.000, 137500.000) = 1 
+    [137500.000, 150000.000) = 0 
+    [150000.000, 162500.000) = 0 
+    [162500.000, 175000.000) = 0 
+    [175000.000, 187500.000) = 0 
+
+  Percentiles, us/op:
+      p(0.0000) =     75.008 us/op
+     p(50.0000) =     88.576 us/op
+     p(90.0000) =    105.984 us/op
+     p(95.0000) =    119.808 us/op
+     p(99.0000) =    215.296 us/op
+     p(99.9000) =    996.352 us/op
+     p(99.9900) =   2046.020 us/op
+     p(99.9990) =  28428.365 us/op
+     p(99.9999) = 126222.336 us/op
+    p(100.0000) = 126222.336 us/op
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: C:\Users\sajin\.gradle\jdks\eclipse_adoptium-21-amd64-windows.2\bin\java.exe
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=C:\Users\sajin\OneDrive\Documents\projects\Mizan\Mizan\mizan-bench\build\tmp\jmh -Duser.country=US -Duser.language=en -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Sampling time
+# Benchmark: com.sajin.mizan.bench.StateRootBench.blockThenRoot
+# Parameters: (accounts = 100, version = 2)
+
+# Run progress: 56.25% complete, ETA 00:04:01
+# Fork: 1 of 2
+# Warmup Iteration   1: 392.071 ±(99.9%) 16.182 us/op
+# Warmup Iteration   2: 339.349 ±(99.9%) 5.842 us/op
+# Warmup Iteration   3: 341.238 ±(99.9%) 4.745 us/op
+Iteration   1: 349.817 ±(99.9%) 4.590 us/op
+                 p0.00:   265.216 us/op
+                 p0.50:   328.192 us/op
+                 p0.90:   388.096 us/op
+                 p0.95:   436.890 us/op
+                 p0.99:   753.060 us/op
+                 p0.999:  1642.596 us/op
+                 p0.9999: 2017.280 us/op
+                 p1.00:   2017.280 us/op
+
+Iteration   2: 396.112 ±(99.9%) 5.790 us/op
+                 p0.00:   278.528 us/op
+                 p0.50:   369.152 us/op
+                 p0.90:   467.968 us/op
+                 p0.95:   567.040 us/op
+                 p0.99:   882.074 us/op
+                 p0.999:  1798.994 us/op
+                 p0.9999: 2363.392 us/op
+                 p1.00:   2363.392 us/op
+
+Iteration   3: 353.699 ±(99.9%) 4.051 us/op
+                 p0.00:   257.792 us/op
+                 p0.50:   340.480 us/op
+                 p0.90:   386.560 us/op
+                 p0.95:   415.232 us/op
+                 p0.99:   733.696 us/op
+                 p0.999:  1515.500 us/op
+                 p0.9999: 1628.160 us/op
+                 p1.00:   1628.160 us/op
+
+Iteration   4: 323.642 ±(99.9%) 4.200 us/op
+                 p0.00:   259.072 us/op
+                 p0.50:   303.104 us/op
+                 p0.90:   346.829 us/op
+                 p0.95:   414.566 us/op
+                 p0.99:   741.663 us/op
+                 p0.999:  1542.287 us/op
+                 p0.9999: 1763.328 us/op
+                 p1.00:   1763.328 us/op
+
+Iteration   5: 339.896 ±(99.9%) 9.860 us/op
+                 p0.00:   246.528 us/op
+                 p0.50:   305.152 us/op
+                 p0.90:   379.904 us/op
+                 p0.95:   435.712 us/op
+                 p0.99:   890.122 us/op
+                 p0.999:  4561.273 us/op
+                 p0.9999: 5971.968 us/op
+                 p1.00:   5971.968 us/op
+
+
+# Run progress: 59.38% complete, ETA 00:03:44
+# Fork: 2 of 2
+# Warmup Iteration   1: 407.319 ±(99.9%) 17.104 us/op
+# Warmup Iteration   2: 355.815 ±(99.9%) 5.066 us/op
+# Warmup Iteration   3: 339.851 ±(99.9%) 4.839 us/op
+Iteration   1: 352.046 ±(99.9%) 6.263 us/op
+                 p0.00:   259.072 us/op
+                 p0.50:   322.048 us/op
+                 p0.90:   403.866 us/op
+                 p0.95:   485.888 us/op
+                 p0.99:   844.595 us/op
+                 p0.999:  2280.088 us/op
+                 p0.9999: 4448.256 us/op
+                 p1.00:   4448.256 us/op
+
+Iteration   2: 371.706 ±(99.9%) 29.689 us/op
+                 p0.00:   259.584 us/op
+                 p0.50:   326.656 us/op
+                 p0.90:   434.995 us/op
+                 p0.95:   513.536 us/op
+                 p0.99:   869.929 us/op
+                 p0.999:  3122.840 us/op
+                 p0.9999: 43188.224 us/op
+                 p1.00:   43188.224 us/op
+
+Iteration   3: 334.161 ±(99.9%) 4.247 us/op
+                 p0.00:   265.728 us/op
+                 p0.50:   312.832 us/op
+                 p0.90:   354.816 us/op
+                 p0.95:   428.032 us/op
+                 p0.99:   758.313 us/op
+                 p0.999:  1408.694 us/op
+                 p0.9999: 1835.008 us/op
+                 p1.00:   1835.008 us/op
+
+Iteration   4: 372.699 ±(99.9%) 4.910 us/op
+                 p0.00:   263.168 us/op
+                 p0.50:   355.840 us/op
+                 p0.90:   407.040 us/op
+                 p0.95:   443.290 us/op
+                 p0.99:   823.009 us/op
+                 p0.999:  1707.020 us/op
+                 p0.9999: 2805.760 us/op
+                 p1.00:   2805.760 us/op
+
+Iteration   5: 384.947 ±(99.9%) 4.261 us/op
+                 p0.00:   301.568 us/op
+                 p0.50:   369.664 us/op
+                 p0.90:   414.720 us/op
+                 p0.95:   453.120 us/op
+                 p0.99:   754.463 us/op
+                 p0.999:  1574.048 us/op
+                 p0.9999: 2490.368 us/op
+                 p1.00:   2490.368 us/op
+
+
+
+Result "com.sajin.mizan.bench.StateRootBench.blockThenRoot":
+  N = 56251
+  mean =    356.550 ±(99.9%) 3.332 us/op
+
+  Histogram, us/op:
+    [    0.000,  5000.000) = 56244 
+    [ 5000.000, 10000.000) = 5 
+    [10000.000, 15000.000) = 0 
+    [15000.000, 20000.000) = 0 
+    [20000.000, 25000.000) = 1 
+    [25000.000, 30000.000) = 0 
+    [30000.000, 35000.000) = 0 
+    [35000.000, 40000.000) = 0 
+    [40000.000, 45000.000) = 1 
+
+  Percentiles, us/op:
+      p(0.0000) =    246.528 us/op
+     p(50.0000) =    331.264 us/op
+     p(90.0000) =    405.504 us/op
+     p(95.0000) =    466.944 us/op
+     p(99.0000) =    797.696 us/op
+     p(99.9000) =   1763.328 us/op
+     p(99.9900) =   5346.266 us/op
+     p(99.9990) =  43188.224 us/op
+     p(99.9999) =  43188.224 us/op
+    p(100.0000) =  43188.224 us/op
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: C:\Users\sajin\.gradle\jdks\eclipse_adoptium-21-amd64-windows.2\bin\java.exe
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=C:\Users\sajin\OneDrive\Documents\projects\Mizan\Mizan\mizan-bench\build\tmp\jmh -Duser.country=US -Duser.language=en -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Sampling time
+# Benchmark: com.sajin.mizan.bench.StateRootBench.blockThenRoot
+# Parameters: (accounts = 1000, version = 1)
+
+# Run progress: 62.50% complete, ETA 00:03:26
+# Fork: 1 of 2
+# Warmup Iteration   1: 1071.790 ±(99.9%) 77.860 us/op
+# Warmup Iteration   2: 817.280 ±(99.9%) 12.368 us/op
+# Warmup Iteration   3: 841.225 ±(99.9%) 12.984 us/op
+Iteration   1: 725.285 ±(99.9%) 11.369 us/op
+                 p0.00:   615.424 us/op
+                 p0.50:   673.792 us/op
+                 p0.90:   810.598 us/op
+                 p0.95:   1063.731 us/op
+                 p0.99:   1577.083 us/op
+                 p0.999:  2504.409 us/op
+                 p0.9999: 2768.896 us/op
+                 p1.00:   2768.896 us/op
+
+Iteration   2: 755.134 ±(99.9%) 23.929 us/op
+                 p0.00:   620.544 us/op
+                 p0.50:   675.840 us/op
+                 p0.90:   872.858 us/op
+                 p0.95:   1085.030 us/op
+                 p0.99:   2021.294 us/op
+                 p0.999:  6947.209 us/op
+                 p0.9999: 10944.512 us/op
+                 p1.00:   10944.512 us/op
+
+Iteration   3: 773.793 ±(99.9%) 11.801 us/op
+                 p0.00:   624.640 us/op
+                 p0.50:   714.752 us/op
+                 p0.90:   931.635 us/op
+                 p0.95:   1157.939 us/op
+                 p0.99:   1540.588 us/op
+                 p0.999:  2360.115 us/op
+                 p0.9999: 2490.368 us/op
+                 p1.00:   2490.368 us/op
+
+Iteration   4: 909.233 ±(99.9%) 15.875 us/op
+                 p0.00:   683.008 us/op
+                 p0.50:   859.136 us/op
+                 p0.90:   1112.883 us/op
+                 p0.95:   1310.106 us/op
+                 p0.99:   1868.411 us/op
+                 p0.999:  3007.328 us/op
+                 p0.9999: 3260.416 us/op
+                 p1.00:   3260.416 us/op
+
+Iteration   5: 1014.530 ±(99.9%) 18.527 us/op
+                 p0.00:   847.872 us/op
+                 p0.50:   942.080 us/op
+                 p0.90:   1211.597 us/op
+                 p0.95:   1437.901 us/op
+                 p0.99:   2011.791 us/op
+                 p0.999:  3523.797 us/op
+                 p0.9999: 4489.216 us/op
+                 p1.00:   4489.216 us/op
+
+
+# Run progress: 65.63% complete, ETA 00:03:09
+# Fork: 2 of 2
+# Warmup Iteration   1: 1249.444 ±(99.9%) 71.319 us/op
+# Warmup Iteration   2: 1103.172 ±(99.9%) 14.686 us/op
+# Warmup Iteration   3: 857.083 ±(99.9%) 11.843 us/op
+Iteration   1: 1080.743 ±(99.9%) 56.122 us/op
+                 p0.00:   753.664 us/op
+                 p0.50:   995.328 us/op
+                 p0.90:   1363.968 us/op
+                 p0.95:   1624.371 us/op
+                 p0.99:   2813.460 us/op
+                 p0.999:  11344.937 us/op
+                 p0.9999: 26509.312 us/op
+                 p1.00:   26509.312 us/op
+
+Iteration   2: 946.394 ±(99.9%) 21.860 us/op
+                 p0.00:   697.344 us/op
+                 p0.50:   886.272 us/op
+                 p0.90:   1231.872 us/op
+                 p0.95:   1453.568 us/op
+                 p0.99:   2078.720 us/op
+                 p0.999:  3194.368 us/op
+                 p0.9999: 6914.048 us/op
+                 p1.00:   6914.048 us/op
+
+Iteration   3: 924.267 ±(99.9%) 13.748 us/op
+                 p0.00:   748.544 us/op
+                 p0.50:   882.688 us/op
+                 p0.90:   1040.998 us/op
+                 p0.95:   1234.944 us/op
+                 p0.99:   1839.841 us/op
+                 p0.999:  3119.776 us/op
+                 p0.9999: 3682.304 us/op
+                 p1.00:   3682.304 us/op
+
+Iteration   4: 917.113 ±(99.9%) 15.630 us/op
+                 p0.00:   733.184 us/op
+                 p0.50:   858.112 us/op
+                 p0.90:   1069.056 us/op
+                 p0.95:   1273.037 us/op
+                 p0.99:   1978.450 us/op
+                 p0.999:  2880.217 us/op
+                 p0.9999: 3207.168 us/op
+                 p1.00:   3207.168 us/op
+
+Iteration   5: 935.051 ±(99.9%) 38.070 us/op
+                 p0.00:   740.352 us/op
+                 p0.50:   830.464 us/op
+                 p0.90:   1121.280 us/op
+                 p0.95:   1401.344 us/op
+                 p0.99:   2189.312 us/op
+                 p0.999:  11505.500 us/op
+                 p0.9999: 16875.520 us/op
+                 p1.00:   16875.520 us/op
+
+
+
+Result "com.sajin.mizan.bench.StateRootBench.blockThenRoot":
+  N = 22646
+  mean =    884.682 ±(99.9%) 8.031 us/op
+
+  Histogram, us/op:
+    [    0.000,  2500.000) = 22556 
+    [ 2500.000,  5000.000) = 74 
+    [ 5000.000,  7500.000) = 10 
+    [ 7500.000, 10000.000) = 2 
+    [10000.000, 12500.000) = 2 
+    [12500.000, 15000.000) = 0 
+    [15000.000, 17500.000) = 1 
+    [17500.000, 20000.000) = 0 
+    [20000.000, 22500.000) = 0 
+    [22500.000, 25000.000) = 0 
+    [25000.000, 27500.000) = 1 
+
+  Percentiles, us/op:
+      p(0.0000) =    615.424 us/op
+     p(50.0000) =    828.416 us/op
+     p(90.0000) =   1114.112 us/op
+     p(95.0000) =   1316.147 us/op
+     p(99.0000) =   1965.117 us/op
+     p(99.9000) =   3972.399 us/op
+     p(99.9900) =  15635.182 us/op
+     p(99.9990) =  26509.312 us/op
+     p(99.9999) =  26509.312 us/op
+    p(100.0000) =  26509.312 us/op
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: C:\Users\sajin\.gradle\jdks\eclipse_adoptium-21-amd64-windows.2\bin\java.exe
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=C:\Users\sajin\OneDrive\Documents\projects\Mizan\Mizan\mizan-bench\build\tmp\jmh -Duser.country=US -Duser.language=en -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Sampling time
+# Benchmark: com.sajin.mizan.bench.StateRootBench.blockThenRoot
+# Parameters: (accounts = 1000, version = 2)
+
+# Run progress: 68.75% complete, ETA 00:02:52
+# Fork: 1 of 2
+# Warmup Iteration   1: 735.244 ±(99.9%) 18.879 us/op
+# Warmup Iteration   2: 622.726 ±(99.9%) 9.125 us/op
+# Warmup Iteration   3: 597.608 ±(99.9%) 7.770 us/op
+Iteration   1: 656.289 ±(99.9%) 9.591 us/op
+                 p0.00:   534.528 us/op
+                 p0.50:   611.328 us/op
+                 p0.90:   740.352 us/op
+                 p0.95:   866.304 us/op
+                 p0.99:   1441.382 us/op
+                 p0.999:  2209.137 us/op
+                 p0.9999: 3674.112 us/op
+                 p1.00:   3674.112 us/op
+
+Iteration   2: 589.444 ±(99.9%) 8.086 us/op
+                 p0.00:   486.400 us/op
+                 p0.50:   555.008 us/op
+                 p0.90:   635.904 us/op
+                 p0.95:   749.875 us/op
+                 p0.99:   1298.145 us/op
+                 p0.999:  2074.266 us/op
+                 p0.9999: 2379.776 us/op
+                 p1.00:   2379.776 us/op
+
+Iteration   3: 623.079 ±(99.9%) 9.163 us/op
+                 p0.00:   485.888 us/op
+                 p0.50:   577.536 us/op
+                 p0.90:   722.432 us/op
+                 p0.95:   884.480 us/op
+                 p0.99:   1281.024 us/op
+                 p0.999:  2174.106 us/op
+                 p0.9999: 2535.424 us/op
+                 p1.00:   2535.424 us/op
+
+Iteration   4: 628.763 ±(99.9%) 21.699 us/op
+                 p0.00:   497.664 us/op
+                 p0.50:   571.392 us/op
+                 p0.90:   713.728 us/op
+                 p0.95:   868.352 us/op
+                 p0.99:   1409.946 us/op
+                 p0.999:  5147.750 us/op
+                 p0.9999: 17661.952 us/op
+                 p1.00:   17661.952 us/op
+
+Iteration   5: 572.464 ±(99.9%) 8.079 us/op
+                 p0.00:   470.528 us/op
+                 p0.50:   539.648 us/op
+                 p0.90:   612.352 us/op
+                 p0.95:   727.040 us/op
+                 p0.99:   1230.848 us/op
+                 p0.999:  2066.088 us/op
+                 p0.9999: 2523.136 us/op
+                 p1.00:   2523.136 us/op
+
+
+# Run progress: 71.88% complete, ETA 00:02:34
+# Fork: 2 of 2
+# Warmup Iteration   1: 738.117 ±(99.9%) 23.397 us/op
+# Warmup Iteration   2: 712.580 ±(99.9%) 14.477 us/op
+# Warmup Iteration   3: 705.024 ±(99.9%) 14.280 us/op
+Iteration   1: 667.728 ±(99.9%) 12.195 us/op
+                 p0.00:   521.728 us/op
+                 p0.50:   598.016 us/op
+                 p0.90:   821.862 us/op
+                 p0.95:   1024.000 us/op
+                 p0.99:   1650.524 us/op
+                 p0.999:  2445.246 us/op
+                 p0.9999: 2719.744 us/op
+                 p1.00:   2719.744 us/op
+
+Iteration   2: 698.101 ±(99.9%) 25.527 us/op
+                 p0.00:   502.272 us/op
+                 p0.50:   615.424 us/op
+                 p0.90:   899.277 us/op
+                 p0.95:   1121.587 us/op
+                 p0.99:   1851.331 us/op
+                 p0.999:  4337.394 us/op
+                 p0.9999: 17825.792 us/op
+                 p1.00:   17825.792 us/op
+
+Iteration   3: 612.770 ±(99.9%) 10.503 us/op
+                 p0.00:   489.984 us/op
+                 p0.50:   562.176 us/op
+                 p0.90:   711.475 us/op
+                 p0.95:   912.179 us/op
+                 p0.99:   1417.789 us/op
+                 p0.999:  2579.726 us/op
+                 p0.9999: 2936.832 us/op
+                 p1.00:   2936.832 us/op
+
+Iteration   4: 606.469 ±(99.9%) 10.676 us/op
+                 p0.00:   488.960 us/op
+                 p0.50:   552.960 us/op
+                 p0.90:   703.488 us/op
+                 p0.95:   929.792 us/op
+                 p0.99:   1491.763 us/op
+                 p0.999:  2441.576 us/op
+                 p0.9999: 2560.000 us/op
+                 p1.00:   2560.000 us/op
+
+Iteration   5: 657.957 ±(99.9%) 12.322 us/op
+                 p0.00:   495.104 us/op
+                 p0.50:   599.040 us/op
+                 p0.90:   823.194 us/op
+                 p0.95:   1031.987 us/op
+                 p0.99:   1571.656 us/op
+                 p0.999:  2605.437 us/op
+                 p0.9999: 2854.912 us/op
+                 p1.00:   2854.912 us/op
+
+
+
+Result "com.sajin.mizan.bench.StateRootBench.blockThenRoot":
+  N = 31863
+  mean =    629.207 ±(99.9%) 4.330 us/op
+
+  Histogram, us/op:
+    [    0.000,  1250.000) = 31319 
+    [ 1250.000,  2500.000) = 521 
+    [ 2500.000,  3750.000) = 16 
+    [ 3750.000,  5000.000) = 2 
+    [ 5000.000,  6250.000) = 3 
+    [ 6250.000,  7500.000) = 0 
+    [ 7500.000,  8750.000) = 0 
+    [ 8750.000, 10000.000) = 0 
+    [10000.000, 11250.000) = 0 
+    [11250.000, 12500.000) = 0 
+    [12500.000, 13750.000) = 0 
+    [13750.000, 15000.000) = 0 
+    [15000.000, 16250.000) = 0 
+    [16250.000, 17500.000) = 0 
+    [17500.000, 18750.000) = 2 
+
+  Percentiles, us/op:
+      p(0.0000) =    470.528 us/op
+     p(50.0000) =    575.488 us/op
+     p(90.0000) =    744.448 us/op
+     p(95.0000) =    932.864 us/op
+     p(99.0000) =   1497.252 us/op
+     p(99.9000) =   2428.928 us/op
+     p(99.9900) =   6057.375 us/op
+     p(99.9990) =  17825.792 us/op
+     p(99.9999) =  17825.792 us/op
+    p(100.0000) =  17825.792 us/op
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: C:\Users\sajin\.gradle\jdks\eclipse_adoptium-21-amd64-windows.2\bin\java.exe
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=C:\Users\sajin\OneDrive\Documents\projects\Mizan\Mizan\mizan-bench\build\tmp\jmh -Duser.country=US -Duser.language=en -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Sampling time
+# Benchmark: com.sajin.mizan.bench.StateRootBench.blockThenRoot
+# Parameters: (accounts = 10000, version = 1)
+
+# Run progress: 75.00% complete, ETA 00:02:17
+# Fork: 1 of 2
+# Warmup Iteration   1: 8961.243 ±(99.9%) 1177.070 us/op
+# Warmup Iteration   2: 8124.799 ±(99.9%) 149.478 us/op
+# Warmup Iteration   3: 7605.051 ±(99.9%) 145.921 us/op
+Iteration   1: 7491.890 ±(99.9%) 146.980 us/op
+                 p0.00:   6717.440 us/op
+                 p0.50:   7184.384 us/op
+                 p0.90:   8568.832 us/op
+                 p0.95:   9233.203 us/op
+                 p0.99:   9695.887 us/op
+                 p0.999:  10158.080 us/op
+                 p0.9999: 10158.080 us/op
+                 p1.00:   10158.080 us/op
+
+Iteration   2: 7295.243 ±(99.9%) 314.910 us/op
+                 p0.00:   6209.536 us/op
+                 p0.50:   6856.704 us/op
+                 p0.90:   8622.899 us/op
+                 p0.95:   9200.435 us/op
+                 p0.99:   17311.334 us/op
+                 p0.999:  17596.416 us/op
+                 p0.9999: 17596.416 us/op
+                 p1.00:   17596.416 us/op
+
+Iteration   3: 6784.304 ±(99.9%) 133.938 us/op
+                 p0.00:   6168.576 us/op
+                 p0.50:   6438.912 us/op
+                 p0.90:   7615.283 us/op
+                 p0.95:   8283.750 us/op
+                 p0.99:   9358.705 us/op
+                 p0.999:  9486.336 us/op
+                 p0.9999: 9486.336 us/op
+                 p1.00:   9486.336 us/op
+
+Iteration   4: 6912.472 ±(99.9%) 160.277 us/op
+                 p0.00:   6193.152 us/op
+                 p0.50:   6553.600 us/op
+                 p0.90:   8155.955 us/op
+                 p0.95:   8794.931 us/op
+                 p0.99:   9854.648 us/op
+                 p0.999:  11665.408 us/op
+                 p0.9999: 11665.408 us/op
+                 p1.00:   11665.408 us/op
+
+Iteration   5: 6793.327 ±(99.9%) 146.717 us/op
+                 p0.00:   6168.576 us/op
+                 p0.50:   6463.488 us/op
+                 p0.90:   7652.966 us/op
+                 p0.95:   8537.702 us/op
+                 p0.99:   10208.707 us/op
+                 p0.999:  10551.296 us/op
+                 p0.9999: 10551.296 us/op
+                 p1.00:   10551.296 us/op
+
+
+# Run progress: 78.13% complete, ETA 00:02:00
+# Fork: 2 of 2
+# Warmup Iteration   1: 8866.667 ±(99.9%) 1005.799 us/op
+# Warmup Iteration   2: 7497.613 ±(99.9%) 132.310 us/op
+# Warmup Iteration   3: 7804.214 ±(99.9%) 136.323 us/op
+Iteration   1: 7292.275 ±(99.9%) 135.788 us/op
+                 p0.00:   6414.336 us/op
+                 p0.50:   7217.152 us/op
+                 p0.90:   8055.194 us/op
+                 p0.95:   8634.368 us/op
+                 p0.99:   10109.911 us/op
+                 p0.999:  11141.120 us/op
+                 p0.9999: 11141.120 us/op
+                 p1.00:   11141.120 us/op
+
+Iteration   2: 6973.390 ±(99.9%) 131.918 us/op
+                 p0.00:   6406.144 us/op
+                 p0.50:   6701.056 us/op
+                 p0.90:   7916.749 us/op
+                 p0.95:   8367.309 us/op
+                 p0.99:   9819.259 us/op
+                 p0.999:  10158.080 us/op
+                 p0.9999: 10158.080 us/op
+                 p1.00:   10158.080 us/op
+
+Iteration   3: 7278.045 ±(99.9%) 220.387 us/op
+                 p0.00:   6406.144 us/op
+                 p0.50:   6832.128 us/op
+                 p0.90:   8470.528 us/op
+                 p0.95:   9222.554 us/op
+                 p0.99:   12563.579 us/op
+                 p0.999:  15384.576 us/op
+                 p0.9999: 15384.576 us/op
+                 p1.00:   15384.576 us/op
+
+Iteration   4: 7065.816 ±(99.9%) 157.555 us/op
+                 p0.00:   6365.184 us/op
+                 p0.50:   6692.864 us/op
+                 p0.90:   8121.549 us/op
+                 p0.95:   8624.538 us/op
+                 p0.99:   10134.159 us/op
+                 p0.999:  10731.520 us/op
+                 p0.9999: 10731.520 us/op
+                 p1.00:   10731.520 us/op
+
+Iteration   5: 7065.860 ±(99.9%) 143.605 us/op
+                 p0.00:   6406.144 us/op
+                 p0.50:   6742.016 us/op
+                 p0.90:   7958.528 us/op
+                 p0.95:   8642.560 us/op
+                 p0.99:   9870.541 us/op
+                 p0.999:  11042.816 us/op
+                 p0.9999: 11042.816 us/op
+                 p1.00:   11042.816 us/op
+
+
+
+Result "com.sajin.mizan.bench.StateRootBench.blockThenRoot":
+  N = 2836
+  mean =   7088.270 ±(99.9%) 56.841 us/op
+
+  Histogram, us/op:
+    [    0.000,  1250.000) = 0 
+    [ 1250.000,  2500.000) = 0 
+    [ 2500.000,  3750.000) = 0 
+    [ 3750.000,  5000.000) = 0 
+    [ 5000.000,  6250.000) = 71 
+    [ 6250.000,  7500.000) = 2128 
+    [ 7500.000,  8750.000) = 490 
+    [ 8750.000, 10000.000) = 119 
+    [10000.000, 11250.000) = 18 
+    [11250.000, 12500.000) = 2 
+    [12500.000, 13750.000) = 1 
+    [13750.000, 15000.000) = 2 
+    [15000.000, 16250.000) = 2 
+    [16250.000, 17500.000) = 1 
+    [17500.000, 18750.000) = 2 
+
+  Percentiles, us/op:
+      p(0.0000) =   6168.576 us/op
+     p(50.0000) =   6823.936 us/op
+     p(90.0000) =   8126.464 us/op
+     p(95.0000) =   8798.208 us/op
+     p(99.0000) =  10014.884 us/op
+     p(99.9000) =  17289.380 us/op
+     p(99.9900) =  17596.416 us/op
+     p(99.9990) =  17596.416 us/op
+     p(99.9999) =  17596.416 us/op
+    p(100.0000) =  17596.416 us/op
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: C:\Users\sajin\.gradle\jdks\eclipse_adoptium-21-amd64-windows.2\bin\java.exe
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=C:\Users\sajin\OneDrive\Documents\projects\Mizan\Mizan\mizan-bench\build\tmp\jmh -Duser.country=US -Duser.language=en -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Sampling time
+# Benchmark: com.sajin.mizan.bench.StateRootBench.blockThenRoot
+# Parameters: (accounts = 10000, version = 2)
+
+# Run progress: 81.25% complete, ETA 00:01:43
+# Fork: 1 of 2
+# Warmup Iteration   1: 954.259 ±(99.9%) 28.110 us/op
+# Warmup Iteration   2: 992.642 ±(99.9%) 20.200 us/op
+# Warmup Iteration   3: 892.935 ±(99.9%) 16.968 us/op
+Iteration   1: 1211.174 ±(99.9%) 38.223 us/op
+                 p0.00:   705.536 us/op
+                 p0.50:   1153.024 us/op
+                 p0.90:   1529.856 us/op
+                 p0.95:   1846.067 us/op
+                 p0.99:   3587.604 us/op
+                 p0.999:  6133.547 us/op
+                 p0.9999: 7004.160 us/op
+                 p1.00:   7004.160 us/op
+
+Iteration   2: 903.982 ±(99.9%) 17.954 us/op
+                 p0.00:   671.744 us/op
+                 p0.50:   840.704 us/op
+                 p0.90:   1132.544 us/op
+                 p0.95:   1311.949 us/op
+                 p0.99:   1803.878 us/op
+                 p0.999:  3534.356 us/op
+                 p0.9999: 3555.328 us/op
+                 p1.00:   3555.328 us/op
+
+Iteration   3: 812.255 ±(99.9%) 15.921 us/op
+                 p0.00:   638.976 us/op
+                 p0.50:   750.592 us/op
+                 p0.90:   961.229 us/op
+                 p0.95:   1192.653 us/op
+                 p0.99:   1692.365 us/op
+                 p0.999:  3239.936 us/op
+                 p0.9999: 3395.584 us/op
+                 p1.00:   3395.584 us/op
+
+Iteration   4: 820.189 ±(99.9%) 20.816 us/op
+                 p0.00:   626.688 us/op
+                 p0.50:   735.232 us/op
+                 p0.90:   985.088 us/op
+                 p0.95:   1175.552 us/op
+                 p0.99:   2554.266 us/op
+                 p0.999:  3943.268 us/op
+                 p0.9999: 6479.872 us/op
+                 p1.00:   6479.872 us/op
+
+Iteration   5: 752.092 ±(99.9%) 15.185 us/op
+                 p0.00:   630.784 us/op
+                 p0.50:   691.200 us/op
+                 p0.90:   832.205 us/op
+                 p0.95:   1052.058 us/op
+                 p0.99:   1671.823 us/op
+                 p0.999:  3401.736 us/op
+                 p0.9999: 3493.888 us/op
+                 p1.00:   3493.888 us/op
+
+
+# Run progress: 84.38% complete, ETA 00:01:26
+# Fork: 2 of 2
+# Warmup Iteration   1: 928.327 ±(99.9%) 27.527 us/op
+# Warmup Iteration   2: 867.941 ±(99.9%) 15.043 us/op
+# Warmup Iteration   3: 886.351 ±(99.9%) 18.527 us/op
+Iteration   1: 881.519 ±(99.9%) 15.203 us/op
+                 p0.00:   662.528 us/op
+                 p0.50:   836.608 us/op
+                 p0.90:   995.328 us/op
+                 p0.95:   1181.901 us/op
+                 p0.99:   1652.736 us/op
+                 p0.999:  3293.168 us/op
+                 p0.9999: 3485.696 us/op
+                 p1.00:   3485.696 us/op
+
+Iteration   2: 823.342 ±(99.9%) 14.122 us/op
+                 p0.00:   657.408 us/op
+                 p0.50:   776.192 us/op
+                 p0.90:   924.672 us/op
+                 p0.95:   1034.650 us/op
+                 p0.99:   1575.158 us/op
+                 p0.999:  3506.799 us/op
+                 p0.9999: 3670.016 us/op
+                 p1.00:   3670.016 us/op
+
+Iteration   3: 819.888 ±(99.9%) 13.782 us/op
+                 p0.00:   655.360 us/op
+                 p0.50:   771.072 us/op
+                 p0.90:   934.912 us/op
+                 p0.95:   1067.008 us/op
+                 p0.99:   1578.844 us/op
+                 p0.999:  3146.514 us/op
+                 p0.9999: 3284.992 us/op
+                 p1.00:   3284.992 us/op
+
+Iteration   4: 824.011 ±(99.9%) 23.216 us/op
+                 p0.00:   667.648 us/op
+                 p0.50:   769.024 us/op
+                 p0.90:   910.643 us/op
+                 p0.95:   1007.770 us/op
+                 p0.99:   1622.016 us/op
+                 p0.999:  7711.392 us/op
+                 p0.9999: 10305.536 us/op
+                 p1.00:   10305.536 us/op
+
+Iteration   5: 822.051 ±(99.9%) 18.428 us/op
+                 p0.00:   666.624 us/op
+                 p0.50:   769.024 us/op
+                 p0.90:   946.893 us/op
+                 p0.95:   1067.008 us/op
+                 p0.99:   1598.894 us/op
+                 p0.999:  3627.975 us/op
+                 p0.9999: 8732.672 us/op
+                 p1.00:   8732.672 us/op
+
+
+
+Result "com.sajin.mizan.bench.StateRootBench.blockThenRoot":
+  N = 23506
+  mean =    853.826 ±(99.9%) 6.438 us/op
+
+  Histogram, us/op:
+    [    0.000,  1000.000) = 20473 
+    [ 1000.000,  2000.000) = 2818 
+    [ 2000.000,  3000.000) = 98 
+    [ 3000.000,  4000.000) = 102 
+    [ 4000.000,  5000.000) = 7 
+    [ 5000.000,  6000.000) = 2 
+    [ 6000.000,  7000.000) = 2 
+    [ 7000.000,  8000.000) = 1 
+    [ 8000.000,  9000.000) = 2 
+    [ 9000.000, 10000.000) = 0 
+
+  Percentiles, us/op:
+      p(0.0000) =    626.688 us/op
+     p(50.0000) =    777.216 us/op
+     p(90.0000) =   1087.488 us/op
+     p(95.0000) =   1266.995 us/op
+     p(99.0000) =   1906.258 us/op
+     p(99.9000) =   3719.111 us/op
+     p(99.9900) =   8580.406 us/op
+     p(99.9990) =  10305.536 us/op
+     p(99.9999) =  10305.536 us/op
+    p(100.0000) =  10305.536 us/op
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: C:\Users\sajin\.gradle\jdks\eclipse_adoptium-21-amd64-windows.2\bin\java.exe
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=C:\Users\sajin\OneDrive\Documents\projects\Mizan\Mizan\mizan-bench\build\tmp\jmh -Duser.country=US -Duser.language=en -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Sampling time
+# Benchmark: com.sajin.mizan.bench.StateRootBench.blockThenRoot
+# Parameters: (accounts = 100000, version = 1)
+
+# Run progress: 87.50% complete, ETA 00:01:08
+# Fork: 1 of 2
+# Warmup Iteration   1: 80541.123 ±(99.9%) 11258.852 us/op
+# Warmup Iteration   2: 81049.682 ±(99.9%) 7239.256 us/op
+# Warmup Iteration   3: 72665.381 ±(99.9%) 4285.094 us/op
+Iteration   1: 71909.376 ±(99.9%) 3694.570 us/op
+                 p0.00:   63569.920 us/op
+                 p0.50:   70844.416 us/op
+                 p0.90:   79350.989 us/op
+                 p0.95:   80327.475 us/op
+                 p0.99:   80740.352 us/op
+                 p0.999:  80740.352 us/op
+                 p0.9999: 80740.352 us/op
+                 p1.00:   80740.352 us/op
+
+Iteration   2: 73681.189 ±(99.9%) 3308.284 us/op
+                 p0.00:   68157.440 us/op
+                 p0.50:   71499.776 us/op
+                 p0.90:   81959.322 us/op
+                 p0.95:   83106.202 us/op
+                 p0.99:   83755.008 us/op
+                 p0.999:  83755.008 us/op
+                 p0.9999: 83755.008 us/op
+                 p1.00:   83755.008 us/op
+
+Iteration   3: 72246.418 ±(99.9%) 3057.616 us/op
+                 p0.00:   66650.112 us/op
+                 p0.50:   70516.736 us/op
+                 p0.90:   80779.674 us/op
+                 p0.95:   81133.568 us/op
+                 p0.99:   81133.568 us/op
+                 p0.999:  81133.568 us/op
+                 p0.9999: 81133.568 us/op
+                 p1.00:   81133.568 us/op
+
+Iteration   4: 75978.069 ±(99.9%) 3917.426 us/op
+                 p0.00:   69468.160 us/op
+                 p0.50:   74448.896 us/op
+                 p0.90:   84646.298 us/op
+                 p0.95:   88578.458 us/op
+                 p0.99:   90570.752 us/op
+                 p0.999:  90570.752 us/op
+                 p0.9999: 90570.752 us/op
+                 p1.00:   90570.752 us/op
+
+Iteration   5: 76419.831 ±(99.9%) 6066.084 us/op
+                 p0.00:   68026.368 us/op
+                 p0.50:   73531.392 us/op
+                 p0.90:   88447.386 us/op
+                 p0.95:   100951.654 us/op
+                 p0.99:   108658.688 us/op
+                 p0.999:  108658.688 us/op
+                 p0.9999: 108658.688 us/op
+                 p1.00:   108658.688 us/op
+
+
+# Run progress: 90.63% complete, ETA 00:00:51
+# Fork: 2 of 2
+# Warmup Iteration   1: 89869.802 ±(99.9%) 9486.646 us/op
+# Warmup Iteration   2: 83749.547 ±(99.9%) 5336.502 us/op
+# Warmup Iteration   3: 81096.868 ±(99.9%) 4617.275 us/op
+Iteration   1: 79464.921 ±(99.9%) 4033.098 us/op
+                 p0.00:   74317.824 us/op
+                 p0.50:   77791.232 us/op
+                 p0.90:   88643.994 us/op
+                 p0.95:   93342.925 us/op
+                 p0.99:   93847.552 us/op
+                 p0.999:  93847.552 us/op
+                 p0.9999: 93847.552 us/op
+                 p1.00:   93847.552 us/op
+
+Iteration   2: 74788.712 ±(99.9%) 3162.437 us/op
+                 p0.00:   68943.872 us/op
+                 p0.50:   74055.680 us/op
+                 p0.90:   81317.069 us/op
+                 p0.95:   85091.942 us/op
+                 p0.99:   85721.088 us/op
+                 p0.999:  85721.088 us/op
+                 p0.9999: 85721.088 us/op
+                 p1.00:   85721.088 us/op
+
+Iteration   3: 71921.079 ±(99.9%) 1626.690 us/op
+                 p0.00:   68157.440 us/op
+                 p0.50:   72024.064 us/op
+                 p0.90:   73583.821 us/op
+                 p0.95:   77515.981 us/op
+                 p0.99:   80347.136 us/op
+                 p0.999:  80347.136 us/op
+                 p0.9999: 80347.136 us/op
+                 p1.00:   80347.136 us/op
+
+Iteration   4: 71986.615 ±(99.9%) 2217.170 us/op
+                 p0.00:   68681.728 us/op
+                 p0.50:   71434.240 us/op
+                 p0.90:   75182.899 us/op
+                 p0.95:   81107.354 us/op
+                 p0.99:   84410.368 us/op
+                 p0.999:  84410.368 us/op
+                 p0.9999: 84410.368 us/op
+                 p1.00:   84410.368 us/op
+
+Iteration   5: 72304.933 ±(99.9%) 2147.982 us/op
+                 p0.00:   67502.080 us/op
+                 p0.50:   71958.528 us/op
+                 p0.90:   77096.550 us/op
+                 p0.95:   79711.437 us/op
+                 p0.99:   81657.856 us/op
+                 p0.999:  81657.856 us/op
+                 p0.9999: 81657.856 us/op
+                 p1.00:   81657.856 us/op
+
+
+
+Result "com.sajin.mizan.bench.StateRootBench.blockThenRoot":
+  N = 275
+  mean =  74012.784 ±(99.9%) 1089.391 us/op
+
+  Histogram, us/op:
+    [ 60000.000,  65000.000) = 2 
+    [ 65000.000,  70000.000) = 59 
+    [ 70000.000,  75000.000) = 126 
+    [ 75000.000,  80000.000) = 49 
+    [ 80000.000,  85000.000) = 28 
+    [ 85000.000,  90000.000) = 7 
+    [ 90000.000,  95000.000) = 3 
+    [ 95000.000, 100000.000) = 0 
+    [100000.000, 105000.000) = 0 
+
+  Percentiles, us/op:
+      p(0.0000) =  63569.920 us/op
+     p(50.0000) =  72613.888 us/op
+     p(90.0000) =  81054.925 us/op
+     p(95.0000) =  84200.653 us/op
+     p(99.0000) =  92751.790 us/op
+     p(99.9000) = 108658.688 us/op
+     p(99.9900) = 108658.688 us/op
+     p(99.9990) = 108658.688 us/op
+     p(99.9999) = 108658.688 us/op
+    p(100.0000) = 108658.688 us/op
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: C:\Users\sajin\.gradle\jdks\eclipse_adoptium-21-amd64-windows.2\bin\java.exe
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=C:\Users\sajin\OneDrive\Documents\projects\Mizan\Mizan\mizan-bench\build\tmp\jmh -Duser.country=US -Duser.language=en -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Sampling time
+# Benchmark: com.sajin.mizan.bench.StateRootBench.blockThenRoot
+# Parameters: (accounts = 100000, version = 2)
+
+# Run progress: 93.75% complete, ETA 00:00:34
+# Fork: 1 of 2
+# Warmup Iteration   1: 1238.706 ±(99.9%) 54.455 us/op
+# Warmup Iteration   2: 1151.580 ±(99.9%) 46.031 us/op
+# Warmup Iteration   3: 1079.610 ±(99.9%) 44.941 us/op
+Iteration   1: 1078.505 ±(99.9%) 40.611 us/op
+                 p0.00:   841.728 us/op
+                 p0.50:   999.424 us/op
+                 p0.90:   1224.704 us/op
+                 p0.95:   1399.296 us/op
+                 p0.99:   1916.682 us/op
+                 p0.999:  9184.018 us/op
+                 p0.9999: 9240.576 us/op
+                 p1.00:   9240.576 us/op
+
+Iteration   2: 1104.532 ±(99.9%) 47.498 us/op
+                 p0.00:   825.344 us/op
+                 p0.50:   928.768 us/op
+                 p0.90:   1512.858 us/op
+                 p0.95:   1900.237 us/op
+                 p0.99:   2811.331 us/op
+                 p0.999:  9232.187 us/op
+                 p0.9999: 9551.872 us/op
+                 p1.00:   9551.872 us/op
+
+Iteration   3: 1023.077 ±(99.9%) 40.500 us/op
+                 p0.00:   822.272 us/op
+                 p0.50:   908.288 us/op
+                 p0.90:   1250.509 us/op
+                 p0.95:   1542.758 us/op
+                 p0.99:   1949.204 us/op
+                 p0.999:  9356.771 us/op
+                 p0.9999: 9388.032 us/op
+                 p1.00:   9388.032 us/op
+
+Iteration   4: 1042.866 ±(99.9%) 42.190 us/op
+                 p0.00:   818.176 us/op
+                 p0.50:   925.184 us/op
+                 p0.90:   1237.606 us/op
+                 p0.95:   1435.648 us/op
+                 p0.99:   2183.414 us/op
+                 p0.999:  9331.229 us/op
+                 p0.9999: 9650.176 us/op
+                 p1.00:   9650.176 us/op
+
+Iteration   5: 995.357 ±(99.9%) 40.805 us/op
+                 p0.00:   823.296 us/op
+                 p0.50:   901.120 us/op
+                 p0.90:   1126.400 us/op
+                 p0.95:   1394.688 us/op
+                 p0.99:   1896.038 us/op
+                 p0.999:  9353.953 us/op
+                 p0.9999: 9601.024 us/op
+                 p1.00:   9601.024 us/op
+
+
+# Run progress: 96.88% complete, ETA 00:00:17
+# Fork: 2 of 2
+# Warmup Iteration   1: 1177.680 ±(99.9%) 53.951 us/op
+# Warmup Iteration   2: 1073.791 ±(99.9%) 43.610 us/op
+# Warmup Iteration   3: 1315.733 ±(99.9%) 49.444 us/op
+Iteration   1: 1042.522 ±(99.9%) 43.759 us/op
+                 p0.00:   805.888 us/op
+                 p0.50:   939.008 us/op
+                 p0.90:   1266.074 us/op
+                 p0.95:   1500.774 us/op
+                 p0.99:   2034.401 us/op
+                 p0.999:  9822.274 us/op
+                 p0.9999: 9928.704 us/op
+                 p1.00:   9928.704 us/op
+
+Iteration   2: 1056.523 ±(99.9%) 44.913 us/op
+                 p0.00:   805.888 us/op
+                 p0.50:   946.176 us/op
+                 p0.90:   1330.790 us/op
+                 p0.95:   1576.550 us/op
+                 p0.99:   2051.768 us/op
+                 p0.999:  9479.258 us/op
+                 p0.9999: 9715.712 us/op
+                 p1.00:   9715.712 us/op
+
+Iteration   3: 987.964 ±(99.9%) 41.405 us/op
+                 p0.00:   803.840 us/op
+                 p0.50:   879.616 us/op
+                 p0.90:   1166.131 us/op
+                 p0.95:   1449.984 us/op
+                 p0.99:   2005.811 us/op
+                 p0.999:  9653.043 us/op
+                 p0.9999: 9994.240 us/op
+                 p1.00:   9994.240 us/op
+
+Iteration   4: 985.499 ±(99.9%) 41.251 us/op
+                 p0.00:   797.696 us/op
+                 p0.50:   881.664 us/op
+                 p0.90:   1118.208 us/op
+                 p0.95:   1472.512 us/op
+                 p0.99:   2016.461 us/op
+                 p0.999:  10055.188 us/op
+                 p0.9999: 10125.312 us/op
+                 p1.00:   10125.312 us/op
+
+Iteration   5: 989.505 ±(99.9%) 43.488 us/op
+                 p0.00:   795.648 us/op
+                 p0.50:   882.688 us/op
+                 p0.90:   1140.122 us/op
+                 p0.95:   1379.021 us/op
+                 p0.99:   1999.729 us/op
+                 p0.999:  10111.255 us/op
+                 p0.9999: 10223.616 us/op
+                 p1.00:   10223.616 us/op
+
+
+
+Result "com.sajin.mizan.bench.StateRootBench.blockThenRoot":
+  N = 19503
+  mean =   1029.118 ±(99.9%) 13.492 us/op
+
+  Histogram, us/op:
+    [    0.000,  1000.000) = 14284 
+    [ 1000.000,  2000.000) = 4971 
+    [ 2000.000,  3000.000) = 153 
+    [ 3000.000,  4000.000) = 9 
+    [ 4000.000,  5000.000) = 0 
+    [ 5000.000,  6000.000) = 0 
+    [ 6000.000,  7000.000) = 0 
+    [ 7000.000,  8000.000) = 4 
+    [ 8000.000,  9000.000) = 40 
+    [ 9000.000, 10000.000) = 38 
+
+  Percentiles, us/op:
+      p(0.0000) =    795.648 us/op
+     p(50.0000) =    912.384 us/op
+     p(90.0000) =   1228.800 us/op
+     p(95.0000) =   1507.328 us/op
+     p(99.0000) =   2086.912 us/op
+     p(99.9000) =   9388.032 us/op
+     p(99.9900) =  10130.188 us/op
+     p(99.9990) =  10223.616 us/op
+     p(99.9999) =  10223.616 us/op
+    p(100.0000) =  10223.616 us/op
+
+
+# Run complete. Total time: 00:09:13
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                             (accounts)  (version)    Mode     Cnt       Score      Error  Units
+StateRootBench.blockThenRoot                 100          1    avgt      10     103.765 ±   26.937  us/op
+StateRootBench.blockThenRoot                 100          2    avgt      10     364.143 ±   23.855  us/op
+StateRootBench.blockThenRoot                1000          1    avgt      10     720.919 ±   60.121  us/op
+StateRootBench.blockThenRoot                1000          2    avgt      10     598.647 ±  105.982  us/op
+StateRootBench.blockThenRoot               10000          1    avgt      10    8254.998 ±  455.929  us/op
+StateRootBench.blockThenRoot               10000          2    avgt      10     860.253 ±   95.731  us/op
+StateRootBench.blockThenRoot              100000          1    avgt      10   80085.695 ± 6549.351  us/op
+StateRootBench.blockThenRoot              100000          2    avgt      10    1145.282 ±  153.948  us/op
+StateRootBench.blockThenRoot                 100          1  sample  207933      96.450 ±    2.127  us/op
+StateRootBench.blockThenRoot:p0.00           100          1  sample              75.008             us/op
+StateRootBench.blockThenRoot:p0.50           100          1  sample              88.576             us/op
+StateRootBench.blockThenRoot:p0.90           100          1  sample             105.984             us/op
+StateRootBench.blockThenRoot:p0.95           100          1  sample             119.808             us/op
+StateRootBench.blockThenRoot:p0.99           100          1  sample             215.296             us/op
+StateRootBench.blockThenRoot:p0.999          100          1  sample             996.352             us/op
+StateRootBench.blockThenRoot:p0.9999         100          1  sample            2046.020             us/op
+StateRootBench.blockThenRoot:p1.00           100          1  sample          126222.336             us/op
+StateRootBench.blockThenRoot                 100          2  sample   56251     356.550 ±    3.332  us/op
+StateRootBench.blockThenRoot:p0.00           100          2  sample             246.528             us/op
+StateRootBench.blockThenRoot:p0.50           100          2  sample             331.264             us/op
+StateRootBench.blockThenRoot:p0.90           100          2  sample             405.504             us/op
+StateRootBench.blockThenRoot:p0.95           100          2  sample             466.944             us/op
+StateRootBench.blockThenRoot:p0.99           100          2  sample             797.696             us/op
+StateRootBench.blockThenRoot:p0.999          100          2  sample            1763.328             us/op
+StateRootBench.blockThenRoot:p0.9999         100          2  sample            5346.266             us/op
+StateRootBench.blockThenRoot:p1.00           100          2  sample           43188.224             us/op
+StateRootBench.blockThenRoot                1000          1  sample   22646     884.682 ±    8.031  us/op
+StateRootBench.blockThenRoot:p0.00          1000          1  sample             615.424             us/op
+StateRootBench.blockThenRoot:p0.50          1000          1  sample             828.416             us/op
+StateRootBench.blockThenRoot:p0.90          1000          1  sample            1114.112             us/op
+StateRootBench.blockThenRoot:p0.95          1000          1  sample            1316.147             us/op
+StateRootBench.blockThenRoot:p0.99          1000          1  sample            1965.117             us/op
+StateRootBench.blockThenRoot:p0.999         1000          1  sample            3972.399             us/op
+StateRootBench.blockThenRoot:p0.9999        1000          1  sample           15635.182             us/op
+StateRootBench.blockThenRoot:p1.00          1000          1  sample           26509.312             us/op
+StateRootBench.blockThenRoot                1000          2  sample   31863     629.207 ±    4.330  us/op
+StateRootBench.blockThenRoot:p0.00          1000          2  sample             470.528             us/op
+StateRootBench.blockThenRoot:p0.50          1000          2  sample             575.488             us/op
+StateRootBench.blockThenRoot:p0.90          1000          2  sample             744.448             us/op
+StateRootBench.blockThenRoot:p0.95          1000          2  sample             932.864             us/op
+StateRootBench.blockThenRoot:p0.99          1000          2  sample            1497.252             us/op
+StateRootBench.blockThenRoot:p0.999         1000          2  sample            2428.928             us/op
+StateRootBench.blockThenRoot:p0.9999        1000          2  sample            6057.375             us/op
+StateRootBench.blockThenRoot:p1.00          1000          2  sample           17825.792             us/op
+StateRootBench.blockThenRoot               10000          1  sample    2836    7088.270 ±   56.841  us/op
+StateRootBench.blockThenRoot:p0.00         10000          1  sample            6168.576             us/op
+StateRootBench.blockThenRoot:p0.50         10000          1  sample            6823.936             us/op
+StateRootBench.blockThenRoot:p0.90         10000          1  sample            8126.464             us/op
+StateRootBench.blockThenRoot:p0.95         10000          1  sample            8798.208             us/op
+StateRootBench.blockThenRoot:p0.99         10000          1  sample           10014.884             us/op
+StateRootBench.blockThenRoot:p0.999        10000          1  sample           17289.380             us/op
+StateRootBench.blockThenRoot:p0.9999       10000          1  sample           17596.416             us/op
+StateRootBench.blockThenRoot:p1.00         10000          1  sample           17596.416             us/op
+StateRootBench.blockThenRoot               10000          2  sample   23506     853.826 ±    6.438  us/op
+StateRootBench.blockThenRoot:p0.00         10000          2  sample             626.688             us/op
+StateRootBench.blockThenRoot:p0.50         10000          2  sample             777.216             us/op
+StateRootBench.blockThenRoot:p0.90         10000          2  sample            1087.488             us/op
+StateRootBench.blockThenRoot:p0.95         10000          2  sample            1266.995             us/op
+StateRootBench.blockThenRoot:p0.99         10000          2  sample            1906.258             us/op
+StateRootBench.blockThenRoot:p0.999        10000          2  sample            3719.111             us/op
+StateRootBench.blockThenRoot:p0.9999       10000          2  sample            8580.406             us/op
+StateRootBench.blockThenRoot:p1.00         10000          2  sample           10305.536             us/op
+StateRootBench.blockThenRoot              100000          1  sample     275   74012.784 ± 1089.391  us/op
+StateRootBench.blockThenRoot:p0.00        100000          1  sample           63569.920             us/op
+StateRootBench.blockThenRoot:p0.50        100000          1  sample           72613.888             us/op
+StateRootBench.blockThenRoot:p0.90        100000          1  sample           81054.925             us/op
+StateRootBench.blockThenRoot:p0.95        100000          1  sample           84200.653             us/op
+StateRootBench.blockThenRoot:p0.99        100000          1  sample           92751.790             us/op
+StateRootBench.blockThenRoot:p0.999       100000          1  sample          108658.688             us/op
+StateRootBench.blockThenRoot:p0.9999      100000          1  sample          108658.688             us/op
+StateRootBench.blockThenRoot:p1.00        100000          1  sample          108658.688             us/op
+StateRootBench.blockThenRoot              100000          2  sample   19503    1029.118 ±   13.492  us/op
+StateRootBench.blockThenRoot:p0.00        100000          2  sample             795.648             us/op
+StateRootBench.blockThenRoot:p0.50        100000          2  sample             912.384             us/op
+StateRootBench.blockThenRoot:p0.90        100000          2  sample            1228.800             us/op
+StateRootBench.blockThenRoot:p0.95        100000          2  sample            1507.328             us/op
+StateRootBench.blockThenRoot:p0.99        100000          2  sample            2086.912             us/op
+StateRootBench.blockThenRoot:p0.999       100000          2  sample            9388.032             us/op
+StateRootBench.blockThenRoot:p0.9999      100000          2  sample           10130.188             us/op
+StateRootBench.blockThenRoot:p1.00        100000          2  sample           10223.616             us/op
+
+Benchmark result is saved to C:\Users\sajin\OneDrive\Documents\projects\Mizan\Mizan\mizan-bench\build\results\jmh\after-StateRootBench.json
