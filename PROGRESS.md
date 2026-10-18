@@ -191,6 +191,20 @@ Note: M2 landed as one commit ("Milestone 2 completed") rather than one commit p
 
 "A stranger runs the 4-node demo from the README" **needs a human**. Earlier gates were re-run in the final self-test loop (below).
 
+## Final self-test loop (2026-10-19, on `94af153`)
+Pass 1:
+- `./gradlew clean build`: passed in 2m 46s (all unit tests, Spotless, Error Prone, JaCoCo gates, `checkModuleGraph`: 42 edges allowed).
+- `scripts/verify-regressions.sh`: 13 of 13 planted defects caught by their named tests (11 earlier plus "peer auth" and "md subscriber cap").
+- `simSweep -Pseeds=200`: consensus sweep 200 × 5 and fault matrix 200 × 6 all passed; 114,584 mangled messages injected.
+- `recoveryTest -Piter=20`: 20 kill -9 cycles over every fault point; 77,370 client FINALs verified; 3,642 torn bytes truncated.
+- `chaosTest -Pminutes=3`: 10 kills, 5 partitions, 5 isolations; 3,483 client FINALs all matched; identical hash and root at all 916 heights; verify-chain OK on all 4.
+
+Pass 2:
+- `simSweep --rerun`: re-ran, same deterministic results.
+- `:mizan-ui:run --demo --screenshot`: the order went FINAL at block 127 in 98 ms; the next proposer was stopped and restarted; 4/4 validators live; 4/4 roots equal the replay ([screenshot](docs/images/sandbox-terminal.png)).
+
+Nothing failed in either pass. The long nightly settings (jqwik 100k, 1M fuzz cases, 1,000 seeds, 200 recovery iterations, 30-minute chaos) last passed on the dates in their gate sections above.
+
 ## Known issues / deferred
 - M5 UI not visually verified (see Gate M5).
 - Result-cache rebuild covers only blocks replayed after the newest snapshot (ADR 0013).
