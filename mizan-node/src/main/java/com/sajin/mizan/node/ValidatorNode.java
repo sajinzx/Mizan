@@ -58,6 +58,8 @@ public final class ValidatorNode implements AutoCloseable {
   private final WalSafetyStore safety;
   private final CommandPool pool;
   private final NodeMetrics metrics;
+  private final int me;
+  private final int validators;
 
   private ValidatorNode(
       BftDriver driver,
@@ -68,7 +70,11 @@ public final class ValidatorNode implements AutoCloseable {
       BlockStore store,
       WalSafetyStore safety,
       CommandPool pool,
-      NodeMetrics metrics) {
+      NodeMetrics metrics,
+      int me,
+      int validators) {
+    this.me = me;
+    this.validators = validators;
     this.driver = driver;
     this.network = network;
     this.heartbeat = heartbeat;
@@ -80,9 +86,26 @@ public final class ValidatorNode implements AutoCloseable {
     this.metrics = metrics;
   }
 
+  /**
+   * Extra observers of one validator (sandbox, dashboards): committed engine events, finality per
+   * height (after that height's events), and consensus lifecycle. {@code null} fields are ignored.
+   */
+  public record Hooks(
+      List<EngineListener> committed, FinalityListener finality, RoundBft.Observer observer) {
+    public static Hooks committedOnly(List<EngineListener> committed) {
+      return new Hooks(committed, null, null);
+    }
+  }
+
   public static ValidatorNode start(
       Node.Settings s, Node.Persistence p, Signer key, int me, List<EngineListener> extraCommitted)
       throws IOException {
+    return start(s, p, key, me, Hooks.committedOnly(extraCommitted));
+  }
+
+  public static ValidatorNode start(
+      Node.Settings s, Node.Persistence p, Signer key, int me, Hooks hooks) throws IOException {
+    List<EngineListener> extraCommitted = hooks.committed() == null ? List.of() : hooks.committed();
     GenesisConfig g = s.genesis();
     Files.createDirectories(p.dataDir());
     Node.checkAnchor(g, p.dataDir());
@@ -135,7 +158,15 @@ public final class ValidatorNode implements AutoCloseable {
     }
     committedListeners.addAll(extraCommitted);
     committedListeners.add(revokeCounter(metrics.counter("revokes")));
-    FinalityListener finality = Listeners.finality(List.of(preCheck, gateway));
+    List<FinalityListener> finals = new ArrayList<>(List.of(preCheck, gateway));
+    if (hooks.finality() != null) {
+      finals.add(hooks.finality());
+    }
+    FinalityListener finality = Listeners.finality(finals);
+    RoundBft.Observer observer = BftSetup.consensusLog(p.dataDir(), me);
+    if (hooks.observer() != null) {
+      observer = BftSetup.both(observer, hooks.observer());
+    }
 
     TcpNetwork net =
         new TcpNetwork(
@@ -154,7 +185,7 @@ public final class ValidatorNode implements AutoCloseable {
                 safety,
                 p.snapshotEvery(),
                 Math.max(200, g.consensus().proposeTimeoutMs() / 2),
-                metrics.observe(BftSetup.consensusLog(p.dataDir(), me))),
+                metrics.observe(observer)),
             r,
             store,
             snaps,
@@ -183,7 +214,8 @@ public final class ValidatorNode implements AutoCloseable {
         .addKeyValue("gatewayPort", gateway.port())
         .addKeyValue("data", p.dataDir())
         .log();
-    return new ValidatorNode(driver, net, hb, gateway, md, store, safety, pool, metrics);
+    return new ValidatorNode(
+        driver, net, hb, gateway, md, store, safety, pool, metrics, me, g.validators().size());
   }
 
   private static EngineListener revokeCounter(Metrics.Counter revokes) {
@@ -196,6 +228,19 @@ public final class ValidatorNode implements AutoCloseable {
         revokes.inc();
       }
     };
+  }
+
+  /** Committed head and per-validator liveness, as {@code CHAIN_INFO} reports it (any thread). */
+  public com.sajin.mizan.net.Messages.ChainInfo chainInfo() {
+    return ChainInfos.bft(driver, me, validators);
+  }
+
+  /**
+   * Fault injection (sandbox, chaos tests): drops all consensus traffic to and from the peers
+   * matching {@code blocked}, as in a network partition. Never used in production.
+   */
+  public void setBlockedPeers(java.util.function.IntPredicate blocked) {
+    network.setBlocked(blocked);
   }
 
   /** Peer transport (chaos tests inject partitions through it). */

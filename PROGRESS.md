@@ -155,6 +155,24 @@ Note: M2 landed as one commit ("Milestone 2 completed") rather than one commit p
 - Up to 39 heights of lag between validators during the chaos. All converged at ≥ 5,983 after the heal.
 - `verify-chain` OK on all 4 data dirs (8 snapshots checked). Identical hash and root at all 5,985 common heights; 23,369 commands; conservation holds.
 
+## Sandbox terminal (owner request, 2026-10-18; ADR 0017)
+- `./gradlew :mizan-ui:run` starts a whole network in-process (`Sandbox`):
+  - 4 rotating-proposer validators over localhost TCP, each with its own block log, snapshots and WAL; state root v2;
+  - 16 market makers and 16 takers, each a real Ed25519 client with failover, rate-controlled up to 1,500 orders/s;
+  - a funded account for the user;
+  - a `ShadowReplica` that re-executes every committed height once.
+- The new terminal (`SandboxApp`, dark, Canvas-drawn) shows:
+  - an order-book ladder with depth bars, a depth chart, candles (1s/5s/15s/1m) with volume and the bots' fair value, and a block strip coloured by proposer with round bumps marked;
+  - trades, blocks and events tabs; an order ticket (all order types and TIFs, route via any validator); your balances and resting orders; your orders going PROVISIONAL → FINAL with their block height;
+  - a validator table (height, state root ✓ against the replay, pool, round bumps, REVOKEs, finality latency, restarts and recovery time) with Stop/Restart/Isolate buttons;
+  - a peer-link matrix; Stop next proposer, Partition 2|2, Heal network and Verify all chains buttons; a live "guarantees" panel with the evidence for each property; bot controls.
+- `--demo` scripts a tour (your order, then stop and restart the next proposer); `--screenshot=… --exit` saves the window ([screenshot](docs/images/sandbox-terminal.png)).
+- Tests:
+  - `SandboxTest` (end to end): bots trade, your order goes FINAL, 4/4 validator roots equal the replay, a stopped validator recovers and catches up, a 2|2 partition halts the chain and healing resumes it, verify-chain passes on all four. One run: height 133, 1,960 commands, 869 trades.
+  - `SandboxModelsTest`: formatting, candle bucketing, sparkline history.
+- The layout was checked in screenshots at 1366×697 by the author. **A human still needs to try the interaction** (clicks, resizing, longer sessions).
+- Seen while testing: a validator that restarts mid-height can judge a re-proposed block invalid because its timestamp is more than 5 s old. That is harmless with f = 1, because the 3 validators that formed the polka cached it as valid; it is recorded in `docs/protocol.md`.
+
 ## M10
 See spec §8.
 

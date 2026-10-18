@@ -143,7 +143,7 @@ val allowedEdges: Map<String, Set<String>> = mapOf(
     "node" to setOf("core", "crypto", "engine", "store", "chain", "net", "sim"),
     "testkit" to setOf("core", "crypto", "engine", "chain"),
     "sim" to setOf("core", "crypto", "engine", "chain", "net", "testkit"),
-    "ui" to setOf("core", "net"),
+    "ui" to setOf("core", "net", "node"), // node: the in-process sandbox (ADR 0017)
     "bench" to setOf("core", "crypto", "engine", "chain", "testkit"),
 )
 

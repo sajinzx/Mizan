@@ -1,4 +1,5 @@
 <configuration>
+  <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>
   <!--
     Structured logging (M9-T2). The message is an event name (node_start, committed, round_bump,
     synced, peer_banned, equivocation, revoke, rollback, ...); details are SLF4J key-value pairs.

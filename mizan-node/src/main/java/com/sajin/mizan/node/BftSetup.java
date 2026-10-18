@@ -111,6 +111,42 @@ final class BftSetup {
     };
   }
 
+  /** Delivers every observation to {@code a}, then {@code b}. */
+  static RoundBft.Observer both(RoundBft.Observer a, RoundBft.Observer b) {
+    return new RoundBft.Observer() {
+      @Override
+      public void equivocation(
+          int validator, long height, int round, String kind, byte[] x, byte[] y) {
+        a.equivocation(validator, height, round, kind, x, y);
+        b.equivocation(validator, height, round, kind, x, y);
+      }
+
+      @Override
+      public void roundStarted(long height, int round) {
+        a.roundStarted(height, round);
+        b.roundStarted(height, round);
+      }
+
+      @Override
+      public void decided(long height, int round) {
+        a.decided(height, round);
+        b.decided(height, round);
+      }
+
+      @Override
+      public void synced(int peer, long height, int blocks) {
+        a.synced(peer, height, blocks);
+        b.synced(peer, height, blocks);
+      }
+
+      @Override
+      public void peerBanned(int peer, long untilMillis) {
+        a.peerBanned(peer, untilMillis);
+        b.peerBanned(peer, untilMillis);
+      }
+    };
+  }
+
   /**
    * Peer-link authentication with validator keys (M9-T3). The chain id is prefixed to every
    * handshake transcript, so a key reused on another chain cannot be replayed here.
