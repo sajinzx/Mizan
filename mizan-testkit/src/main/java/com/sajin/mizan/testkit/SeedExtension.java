@@ -23,7 +23,7 @@ public final class SeedExtension implements ParameterResolver, TestExecutionExce
 
   @Override
   public Object resolveParameter(ParameterContext pc, ExtensionContext ec) {
-    return ec.getStore(NS).getOrComputeIfAbsent("seed", k -> new Seed(initialSeed()), Seed.class);
+    return ec.getStore(NS).computeIfAbsent("seed", k -> new Seed(initialSeed()), Seed.class);
   }
 
   @Override

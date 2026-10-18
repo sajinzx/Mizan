@@ -1,5 +1,5 @@
 # Pinned at project start (2026-10-12): newest stable releases at least two weeks old.
-# JUnit stays on 5.14.x because jqwik 1.10.x is built against JUnit Platform 1.14.
+# JUnit 6.1 (Dependabot, 2026-10-13): jqwik 1.10.1 runs on it; verified by the full build and planted regressions.
 [versions]
 junit = "6.1.3"
 jqwik = "1.10.1"

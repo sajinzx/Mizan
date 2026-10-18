@@ -40,9 +40,14 @@ class UdpHeartbeatTest {
     try {
       heights[2].set(99);
       long deadline = System.nanoTime() + 10_000_000_000L;
+      // Wait for everything asserted below: with 50% loss any one heartbeat may still be missing.
       while (System.nanoTime() < deadline
           && !(Long.valueOf(99).equals(seen.get(0).get(2))
-              && Long.valueOf(99).equals(seen.get(1).get(2)))) {
+              && Long.valueOf(99).equals(seen.get(1).get(2))
+              && seen.get(0).containsKey(1)
+              && seen.get(1).containsKey(0)
+              && seen.get(2).containsKey(0)
+              && seen.get(2).containsKey(1))) {
         Thread.sleep(20);
       }
       assertThat(seen.get(0)).containsEntry(2, 99L).containsKey(1);
