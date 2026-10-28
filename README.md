@@ -1,6 +1,6 @@
 # Mizan
 
-A deterministic limit-order-book exchange on a small BFT chain, built by Sajin MK:
+A deterministic limit-order-book exchange on a small BFT chain.
 - a single-writer matching engine with an escrowed multi-asset ledger;
 - Ed25519-signed commands;
 - an fsynced block log as the write-ahead log;
