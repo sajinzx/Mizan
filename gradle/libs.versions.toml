@@ -36,6 +36,6 @@ jmh-generator = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.r
 
 [plugins]
 spotless = { id = "com.diffplug.spotless", version = "8.10.4" }
-errorprone = { id = "net.ltgt.errorprone", version = "5.1.1" }
+errorprone = { id = "net.ltgt.errorprone", version = "5.2.0" }
 jmh = { id = "me.champeau.jmh", version = "0.7.3" }
 javafx = { id = "org.openjfx.javafxplugin", version = "0.1.0" }
